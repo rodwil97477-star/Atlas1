@@ -8,7 +8,8 @@ const TABS = [
   { id:'inicio', nombre:'Inicio', href:'index.html', ic:'home' },
   { id:'gastos', nombre:'Gastos', href:'gastos.html', ic:'pie' },
   { id:'ritmo', nombre:'Ritmo', href:'ritmo.html', ic:'pulse' },
-  { id:'compromisos', nombre:'Compromisos', href:'compromisos.html', ic:'cal' }
+  { id:'compromisos', nombre:'Compromisos', href:'compromisos.html', ic:'cal' },
+  { id:'resumen', nombre:'Resumen', href:'resumen.html', ic:'resumen' }
 ];
 let ALL = [], MESES = [], PRESTAMOS = [], MES = null, INFO = null, HOJA_PRESTAMOS = false, COMPLETO = true;
 const $ = (s, r) => (r || document).querySelector(s);
@@ -135,7 +136,7 @@ function activarAnimaciones(quiet){
     let i = 0;
     entries.forEach(en => {
       if(!en.isIntersecting) return;
-      en.target.style.setProperty('--d', Math.min(i++ * 40, 200) + 'ms');
+      en.target.style.setProperty('--d', Math.min(i++ * 70, 350) + 'ms');
       en.target.classList.add('in');
       _obs.unobserve(en.target);
     });
@@ -146,7 +147,7 @@ function contar(el, destino, formato, dur){
   if(!el) return;
   formato = formato || (v => 'S/ ' + fmtMonto(v));
   if(REDUCIR_MOVIMIENTO || document.body.classList.contains('quiet')){ el.textContent = formato(destino); return; }
-  const t0 = performance.now() + 60; dur = dur || 600;
+  const t0 = performance.now() + 150; dur = dur || 1200;
   el.textContent = formato(0);
   function paso(t){
     const p = Math.max(0, Math.min(1, (t - t0) / dur));
@@ -264,7 +265,7 @@ function cerrarHoja(inmediato){
   h.ov.classList.remove('open');
   document.removeEventListener('keydown', h.esc);
   const fin = () => { h.ov.remove(); document.body.style.overflow = ''; if(h.foco && h.foco.focus) h.foco.focus({ preventScroll:true }); };
-  if(inmediato || REDUCIR_MOVIMIENTO) fin(); else setTimeout(fin, 320);
+  if(inmediato || REDUCIR_MOVIMIENTO) fin(); else setTimeout(fin, 420);
 }
 function volverHoja(){
   if(!_pila.length) return;
@@ -689,11 +690,11 @@ function htmlMeta(k, total, gasto){
   let pace = '';
   if(actual && rest > 0){
     pace = restante > 0
-      ? `<div class="pace"><div class="pace-t"><div class="pt">Para no pasarte</div><div class="ps">gasta como máximo esto por día los ${rest} día${rest === 1 ? '' : 's'} que quedan</div></div><div class="pace-n"><b>S/ ${fmtMonto(porDia)}</b><span>por día</span></div></div>`
-      : `<div class="pace"><div class="pace-t"><div class="pt">Para frenar</div><div class="ps">si desde hoy gastas la mitad de tu ritmo, cierras en S/ ${fmtMonto(total + ritmo / 2 * rest)}</div></div><div class="pace-n"><b>S/ ${fmtMonto(ritmo / 2)}</b><span>por día</span></div></div>`;
+      ? `<div class="pace st-${estado}"><div class="pace-t"><div class="pt">Para no pasarte</div><div class="ps">gasta como máximo esto por día los ${rest} día${rest === 1 ? '' : 's'} que quedan</div></div><div class="pace-n"><b>S/ ${fmtMonto(porDia)}</b><span>por día</span></div></div>`
+      : `<div class="pace st-${estado}"><div class="pace-t"><div class="pt">Para frenar</div><div class="ps">si desde hoy gastas la mitad de tu ritmo, cierras en S/ ${fmtMonto(total + ritmo / 2 * rest)}</div></div><div class="pace-n"><b>S/ ${fmtMonto(ritmo / 2)}</b><span>por día</span></div></div>`;
   }
   return card(`
-    <div class="cartel st-${estado}"><b>${etiqueta}</b><span>Meta S/ ${fmtMonto(meta)}</span></div>
+    <div class="cartel st-${estado}"><b><i aria-hidden="true"></i>${etiqueta}</b><span>Meta S/ ${fmtMonto(meta)}</span></div>
     <h2 class="sr">Meta de gasto</h2>
     <p class="msg">${msg}</p>
     <div class="stat3">${stats}</div>
@@ -1112,7 +1113,7 @@ function vistaRitmoPresupuesto(k){
   const estado = proy > meta ? 'alto' : (proy > meta * 0.9 ? 'justo' : 'ok');
   const etiqueta = estado === 'ok' ? 'En camino' : estado === 'justo' ? 'Vas justo' : (!actual ? 'Te pasaste' : (total >= meta ? 'Ya te pasaste' : 'Vas a pasarte'));
 
-  let html = card(`<div class="cartel st-${estado}"><b>${etiqueta}</b><span>${actual ? `día ${lim} de ${dm}` : 'mes cerrado'}</span></div>
+  let html = card(`<div class="cartel st-${estado}"><b><i aria-hidden="true"></i>${etiqueta}</b><span>${actual ? `día ${lim} de ${dm}` : 'mes cerrado'}</span></div>
     ${head('Presupuesto')}
     <div class="big" id="presuHeroNum">S/ ${fmtMonto(total)}</div>
     <div class="chips"><span class="chip">de S/ ${fmtMonto(meta)}</span><span class="chip">ritmo ideal S/ ${fmtMonto(metaDia)}/día</span><span class="chip ${dif > 0 ? 'up' : 'down'}">${flecha(dif > 0)} S/ ${fmtMonto(Math.abs(dif))}/día ${dif > 0 ? 'sobre' : 'bajo'} tu ritmo ideal</span></div>`, 'wide');
@@ -1341,9 +1342,98 @@ function abrirPersonaPrestamos(clave){
 }
 
 /* ============================================================
+   RESUMEN (v15) · los últimos meses de un vistazo
+   Panorama del periodo, qué cambió contra el mes anterior (mismos
+   días si el mes está en curso), categorías mes a mes y comercios.
+   ============================================================ */
+function kCorto(v){ return v >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : fmtMonto(v); }
+function paginaResumen(){
+  const k = MES, meses = ventana(k, 6), actual = esMesActual(k), lim = diaLimite(k);
+  if(meses.length < 2){
+    $('#app').innerHTML = card(`${head('Resumen')}<div class="empty">El resumen compara meses: aparece cuando tengas al menos 2 meses con movimientos.</div>`, 'wide');
+    return;
+  }
+  const filasP = ALL.filter(r => esGastoReal(r) && meses.includes(monthKey(r.fecha)));
+  const totales = meses.map(totalGasto), total = totales.reduce((a, b) => a + b, 0);
+  // los promedios y extremos usan solo meses completos: el mes en curso todavía no terminó
+  const cerr = meses.map((m, i) => ({ m, v: totales[i] })).filter(x => !(actual && x.m === k) && x.v > 0);
+  const prom = cerr.length ? cerr.reduce((a, x) => a + x.v, 0) / cerr.length : 0;
+  const alto = cerr.length ? cerr.reduce((a, x) => x.v > a.v ? x : a) : null;
+  const bajo = cerr.length ? cerr.reduce((a, x) => x.v < a.v ? x : a) : null;
+  const meta = leerMeta(), dentro = meta ? cerr.filter(x => x.v <= meta).length : 0;
+  const dias = meses.reduce((a, m) => a + (m === k ? lim : diasDelMes(m)), 0);
+  const nombreMes = m => MESES_LARGOS[+m.split('-')[1] - 1].replace(/^./, c => c.toUpperCase());
+
+  let html = card(`${head(`Últimos ${meses.length} meses`, `<span class="chip">${monthShort(meses[0])} a ${monthShort(k)}${actual ? ' (en curso)' : ''}</span>`)}
+    <div class="big" id="resNum">S/ ${fmtMonto(total)}</div>
+    <div class="metrics res-metrics">
+      <div class="metric"><span class="ml">Promedio mensual</span><span class="mv">S/ ${fmtMonto(prom)}</span><span class="ms">${cerr.length} mes${cerr.length === 1 ? '' : 'es'} completo${cerr.length === 1 ? '' : 's'}</span></div>
+      <div class="metric"><span class="ml">Por día</span><span class="mv">S/ ${fmtMonto(dias ? total / dias : 0)}</span><span class="ms">${dias} días</span></div>
+      <div class="metric"><span class="ml">Mes más alto</span><span class="mv">${alto ? 'S/ ' + fmtMonto(alto.v) : '-'}</span><span class="ms">${alto ? nombreMes(alto.m) : ''}</span></div>
+      <div class="metric"><span class="ml">Mes más bajo</span><span class="mv">${bajo ? 'S/ ' + fmtMonto(bajo.v) : '-'}</span><span class="ms">${bajo ? nombreMes(bajo.m) : ''}</span></div>
+      ${meta ? `<div class="metric"><span class="ml">Dentro de la meta</span><span class="mv ${dentro === cerr.length ? 't-down' : (dentro === 0 ? 't-up' : '')}">${dentro} de ${cerr.length}</span><span class="ms">meta S/ ${fmtMonto(meta)}</span></div>` : ''}
+      <div class="metric"><span class="ml">Movimientos</span><span class="mv">${filasP.length}</span><span class="ms">ticket prom. S/ ${fmt1(filasP.length ? total / filasP.length : 0)}</span></div>
+    </div>`, 'wide');
+
+  /* qué cambió: cada subcategoría contra el mes anterior (mismos días si el mes está en curso) */
+  const prev = prevKey(k), clave = r => r.cat1 + '|' + (r.cat2 || '(sin definir)');
+  const enK = filasMes(k).filter(r => esGastoReal(r) && (!actual || r.fecha.getDate() <= lim));
+  const enP = filasMes(prev).filter(r => esGastoReal(r) && (!actual || r.fecha.getDate() <= lim));
+  const mapa = {};
+  enK.forEach(r => { const c = clave(r); (mapa[c] = mapa[c] || { a:0, b:0 }).a += r.montoSoles; });
+  enP.forEach(r => { const c = clave(r); (mapa[c] = mapa[c] || { a:0, b:0 }).b += r.montoSoles; });
+  const cambios = Object.entries(mapa).map(([c, v]) => ({ c1: c.split('|')[0], c2: c.split('|')[1], a: v.a, b: v.b, d: v.a - v.b }))
+    .filter(x => Math.abs(x.d) >= 1).sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
+  const maxD = Math.max(1, ...cambios.map(x => Math.abs(x.d)));
+  const sube = cambios.filter(x => x.d > 0).reduce((a, x) => a + x.d, 0), baja = -cambios.filter(x => x.d < 0).reduce((a, x) => a + x.d, 0);
+  const filaCambio = (x, i) => `<button class="row" data-c1="${escapeHtml(x.c1)}" data-c2="${escapeHtml(x.c2)}">${tile(x.c2, colorDe(x.c2, 2))}<span class="main"><span class="name">${escapeHtml(x.c2)}</span><span class="sub">S/ ${fmtMonto(x.a)} ahora · S/ ${fmtMonto(x.b)} antes</span>
+      <span class="div-track"><span class="div-bar ${x.d > 0 ? 'up' : 'down'} gx" style="--i:${i};width:${(Math.abs(x.d) / maxD * 50).toFixed(1)}%"></span></span></span>
+      <span class="right"><span class="amt ${x.d > 0 ? 't-up' : 't-down'}">${x.d > 0 ? '+' : '-'}S/ ${fmtMonto(Math.abs(x.d))}</span><span class="date">${x.b > 0 ? (x.d > 0 ? '+' : '-') + Math.round(Math.abs(x.d) / x.b * 100) + '%' : 'nuevo'}</span></span>${chev()}</button>`;
+  /* categorías mes a mes: mapa de calor (cada fila se compara contra su propio máximo) */
+  const top = agrupar(filasP, clave).slice(0, 8);
+  const celdas = top.map((g, fi) => {
+    const vals = meses.map(m => suma(g.filas.filter(r => monthKey(r.fecha) === m))), con = vals.filter(v => v > 0);
+    const mn = con.length ? Math.min(...con) : 0, mxv = Math.max(1, ...vals), rango = mxv - mn;
+    const nivel = v => rango > mxv * 0.08 ? (v - mn) / rango : 0.35;   // fila casi pareja: tono medio uniforme
+    const [c1, c2] = g.clave.split('|'), col = colorDe(c2, 2);
+    return `<button class="heat-row" data-c1="${escapeHtml(c1)}" data-c2="${escapeHtml(c2)}" aria-label="${escapeHtml(c2)}: ${meses.map((m, i) => monthShort(m) + ' S/ ' + fmtMonto(vals[i])).join(', ')}">
+      <span class="heat-name"><i style="background:${col}"></i>${escapeHtml(c2)}</span>
+      ${vals.map((v, i) => `<span class="heat-c fi${meses[i] === k ? ' on' : ''}" style="--i:${fi + i};background:${v > 0 ? alpha(col, (0.14 + 0.66 * nivel(v)).toFixed(2)) : 'transparent'};color:${v > 0 && nivel(v) > 0.62 ? 'var(--ink)' : 'var(--label)'}">${v > 0 ? kCorto(v) : '-'}</span>`).join('')}
+    </button>`;
+  }).join('');
+  html += card(`${head('Categorías mes a mes', '<span class="hint">más intenso = su mes más alto</span>')}
+    <div class="heat" style="--n:${meses.length}">
+      <div class="heat-row heat-h"><span class="heat-name"></span>${meses.map(m => `<span class="heat-c${m === k ? ' on' : ''}">${monthShort(m)}</span>`).join('')}</div>
+      ${celdas}
+    </div>`, 'wide');
+
+  html += card(`${head('Qué cambió', `<span class="hint">vs ${actual ? 'mismos días de ' : ''}${monthShort(prev)}</span>`)}
+    ${cambios.length ? `<div class="chips"><span class="chip up">${flecha(true)} subió S/ ${fmtMonto(sube)}</span><span class="chip down">${flecha(false)} bajó S/ ${fmtMonto(baja)}</span></div>
+    ${listaConMas(cambios, 6, filaCambio, 'categorías más')}` : '<div class="empty">Sin cambios contra el mes anterior.</div>'}`, 'tight');
+
+  /* comercios del periodo */
+  const coms = agrupar(filasP.filter(r => r.comercio), r => r.comercio).slice(0, 8);
+  const maxC = coms.length ? coms[0].total : 1;
+  html += card(`${head('Tus comercios del periodo', `<span class="hint">${meses.length} meses</span>`)}
+    <div class="list">${coms.map((g, i) => { const r0 = g.filas[0], nm = new Set(g.filas.map(r => monthKey(r.fecha))).size;
+      return `<button class="row" data-com="${escapeHtml(g.clave)}">${tile(iconoFila(r0), colorFila(r0))}<span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} compra${g.n === 1 ? '' : 's'} · en ${nm} de ${meses.length} meses</span><span class="track row-track"><span class="gx" style="--i:${i};width:${(g.total / maxC * 100).toFixed(1)}%;background:${colorFila(r0)}"></span></span></span><span class="amt">S/ ${fmtMonto(g.total)}</span>${chev()}</button>`; }).join('') || '<div class="empty">Sin comercios en el periodo.</div>'}</div>`, 'tight');
+
+  html += `<p class="note">El mes en curso cuenta en el total, pero no en el promedio ni en el mes más alto o más bajo, porque todavía no terminó.${actual ? ` "Qué cambió" compara los primeros ${lim} días de cada mes.` : ''}</p>`;
+  $('#app').innerHTML = html;
+  contar($('#resNum'), total);
+  enlazarMas($('#app'), (() => { const id = ($('[data-mas]') || {}).dataset; return id ? { [id.mas]: { filas: cambios, render: filaCambio } } : {}; })());
+  const enlazarFilas = raiz => {
+    $$('[data-c2]', raiz).forEach(b => { if(b._ok) return; b._ok = 1; b.addEventListener('click', () => abrirCat2(b.dataset.c1, b.dataset.c2)); });
+    $$('[data-com]', raiz).forEach(b => { if(b._ok) return; b._ok = 1; b.addEventListener('click', () => abrirComercio(b.dataset.com)); });
+  };
+  enlazarFilas($('#app'));
+  $$('[data-mas]').forEach(b => b.addEventListener('click', () => setTimeout(() => { enlazarFilas($('#app')); $$('#app .gx').forEach(x => x.style.transform = 'none'); }, 0)));
+}
+
+/* ============================================================
    Arranque
    ============================================================ */
-const PAGINAS = { inicio: paginaInicio, gastos: paginaGastos, ritmo: paginaRitmo, compromisos: paginaCompromisos };
+const PAGINAS = { inicio: paginaInicio, gastos: paginaGastos, ritmo: paginaRitmo, compromisos: paginaCompromisos, resumen: paginaResumen };
 /* v13: un monto nunca se parte en dos líneas ("S/" arriba y "2,062" abajo): el espacio después de
    S/ o $ se vuelve no separable en todo lo que se dibuja (pestañas, hojas, contadores). */
 const RE_MONEDA = /(S\/|\$) (?=[-\d])/g;

@@ -21,7 +21,7 @@ Built around his own categorisation tree (cat1 > cat2 > cat3), his bot, and his 
 ## Operating Context
 
 - Data arrives live from a Google Apps Script endpoint (`egresos`, `prestamos`, `presupuestos`); a local copy opens instantly, then refreshes.
-- Four tabs: Inicio (month total, Meta, alerts, trend, latest movements), Gastos (by category, merchant, payment method, search), Ritmo (daily rhythm, calendar, weekday/hour patterns, budget pacing), Compromisos (fixed charges, recurring detection, loans receivable).
+- Five tabs: Inicio (month total, Meta, alerts, trend, latest movements), Gastos (by category, merchant, payment method, search), Ritmo (daily rhythm, calendar, weekday/hour patterns, budget pacing), Compromisos (fixed charges, recurring detection, loans receivable), Resumen (added 2026-10: last six months, what changed, categories month by month, merchants).
 - Detail sheets drill into subcategory, merchant, payment method and person; budgets are edited in a "Presupuesto" sheet.
 - Currency is soles (S/), Spanish (Peru) copy, month selector shared across tabs.
 - Access gate with a device passcode.
@@ -36,7 +36,9 @@ Built around his own categorisation tree (cat1 > cat2 > cat3), his bot, and his 
 ## Brand Commitments
 
 - Personal brand "381": pixel/dot-matrix numeral, tilted -12 degrees, green `#7CFA9E` on near-black `#101014`. Animated logo lives in the header (34x34, radius 10). Icons already generated from this mark.
-- Confirmed by the user (2026-10-03): the whole app adopts the 381 identity, dark-only, with `#7CFA9E` as the accent.
+- Confirmed by the user (2026-10-03): the whole app adopts the 381 identity, dark-only.
+- User preference (2026-10): favourite colour is blue; the interface accent is a light sky blue (celeste). Green, yellow and red are reserved for the on-pace / tight / over traffic light. The logo keeps its green.
+- User preference (2026-10): keeps the original (v13) animations and their slower timings, including live details such as the pinging newest chart point.
 
 ## Evidence on Hand
 

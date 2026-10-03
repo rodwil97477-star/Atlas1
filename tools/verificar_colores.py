@@ -19,7 +19,7 @@ def de(a,b,k=None):
     p,q=oklab(A),oklab(B); return sum((x-y)**2 for x,y in zip(p,q))**0.5
 def lum(h): r,g,b=[lin(x) for x in rgb(h)]; return 0.2126*r+0.7152*g+0.0722*b
 def contrast(a,b): x,y=sorted([lum(a),lum(b)]); return (y+0.05)/(x+0.05)
-ESTADOS={'verde 381 (vas bien)':'#7CFA9E','amarillo (vas justo)':'#FFD84D','rosa (te pasaste)':'#FF5C7A'}
+ESTADOS={'acento celeste':'#5AC8FA','verde (vas bien)':'#7CFA9E','amarillo (vas justo)':'#FFD84D','rojo (te pasaste)':'#FF5A5F'}
 def informe(N1,N2,N3,grupos2,grupos3,umbral=0.10,umbral_cb=0.06):
     malos=[]
     def chk(nombre,conj):

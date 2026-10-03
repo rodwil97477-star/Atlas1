@@ -1,12 +1,27 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-03T19:39:56Z",
+  "generatedAt": "2026-10-03T20:49:34Z",
   "title": "Design System: Finanzas 381",
   "extensions": {
     "colorMeta": {
-      "verde-381": {
+      "celeste": {
         "role": "primary",
-        "displayName": "Verde 381",
+        "displayName": "Celeste",
+        "canonical": "#5AC8FA",
+        "tonalRamp": [
+          "#193744",
+          "#2C627B",
+          "#408EB1",
+          "#53B9E8",
+          "#77D2FB",
+          "#A3E0FC",
+          "#CCEEFD",
+          "#EDF9FE"
+        ]
+      },
+      "verde-ok": {
+        "role": "secondary",
+        "displayName": "Verde OK",
         "canonical": "#7CFA9E",
         "tonalRamp": [
           "#22442B",
@@ -19,9 +34,9 @@
           "#F0FEF4"
         ]
       },
-      "amarillo-chicha": {
+      "amarillo-justo": {
         "role": "secondary",
-        "displayName": "Amarillo Chicha",
+        "displayName": "Amarillo Justo",
         "canonical": "#FFD84D",
         "tonalRamp": [
           "#463B15",
@@ -34,19 +49,19 @@
           "#FFFBEB"
         ]
       },
-      "rosa-chicha": {
+      "rojo-alto": {
         "role": "secondary",
-        "displayName": "Rosa Chicha",
-        "canonical": "#FF5C7A",
+        "displayName": "Rojo Alto",
+        "canonical": "#FF5A5F",
         "tonalRamp": [
-          "#461921",
-          "#7D2D3C",
-          "#B54157",
-          "#EC5571",
-          "#FF7992",
-          "#FFA4B5",
-          "#FFCCD6",
-          "#FFEDF0"
+          "#46191A",
+          "#7D2C2F",
+          "#B54043",
+          "#EC5358",
+          "#FF777B",
+          "#FFA3A6",
+          "#FFCCCD",
+          "#FFEDED"
         ]
       },
       "naranja-aviso": {
@@ -62,21 +77,6 @@
           "#FFCF9C",
           "#FFE4C8",
           "#FFF5EB"
-        ]
-      },
-      "cian-info": {
-        "role": "tertiary",
-        "displayName": "Cian Info",
-        "canonical": "#5CE1E6",
-        "tonalRamp": [
-          "#193D3F",
-          "#2D6E71",
-          "#41A0A3",
-          "#55D1D5",
-          "#79E6EA",
-          "#A4EEF1",
-          "#CCF6F7",
-          "#EDFCFC"
         ]
       },
       "ground-381": {
@@ -189,29 +189,34 @@
     ],
     "motion": [
       {
-        "name": "ease-out",
-        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "purpose": "Entrances, press feedback, bars growing."
+        "name": "ease-v13",
+        "value": "cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Entrances, bars, line drawing, segmented pill (v13 feel)."
       },
       {
-        "name": "ease-in-out",
-        "value": "cubic-bezier(0.77, 0, 0.175, 1)",
-        "purpose": "Segmented-control pill moving on screen."
+        "name": "spring",
+        "value": "cubic-bezier(.34, 1.56, .64, 1)",
+        "purpose": "Chart dots and calendar days pop in with a gentle overshoot (owner's request)."
       },
       {
         "name": "ease-drawer",
         "value": "cubic-bezier(0.32, 0.72, 0, 1)",
-        "purpose": "Bottom sheet: 420ms in, 300ms out."
+        "purpose": "Bottom sheet, 550ms."
       },
       {
         "name": "card-in",
-        "value": "320ms ease-out, opacity + translateY(8px), 40ms stagger capped at 200ms",
-        "purpose": "Cards on first load only."
+        "value": "fadeUp 800ms: translateY(18px) scale(.985) blur(3px) to none; 70ms stagger capped at 350ms",
+        "purpose": "Cards entering the viewport."
       },
       {
-        "name": "press",
-        "value": "scale(0.97) 140ms ease-out",
-        "purpose": "Buttons and icon buttons."
+        "name": "live-loops",
+        "value": "ping 1.8s, glow 2.2s, today ring 2.4s, beating dot 2s, bobbing arrows 1.1s, mark blink 1.8s",
+        "purpose": "Live details, all transform/opacity on their own layer."
+      },
+      {
+        "name": "count-up",
+        "value": "1200ms exponential ease-out",
+        "purpose": "Hero figures."
       }
     ],
     "breakpoints": [
@@ -240,7 +245,7 @@
       "refersTo": "button-primary",
       "description": "The one main commit per view.",
       "html": "<button class=\"ds-btn-primary\">Guardar</button>",
-      "css": ".ds-btn-primary{background:#7CFA9E;color:#07210F;border:0;border-radius:12px;min-height:44px;padding:0 16px;font:700 14px system-ui,sans-serif;cursor:pointer;transition:transform .14s cubic-bezier(.23,1,.32,1),background-color .2s ease}.ds-btn-primary:hover{background:#62E888}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #7CFA9E;outline-offset:2px}"
+      "css": ".ds-btn-primary{background:#5AC8FA;color:#03263B;border:0;border-radius:12px;min-height:44px;padding:0 16px;font:700 14px system-ui,sans-serif;cursor:pointer;transition:transform .14s cubic-bezier(.23,1,.32,1),background-color .2s ease}.ds-btn-primary:hover{background:#7DD3FC}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #5AC8FA;outline-offset:2px}"
     },
     {
       "name": "Soft Button",
@@ -248,7 +253,7 @@
       "refersTo": "button-soft",
       "description": "Secondary actions such as Gestionar presupuesto.",
       "html": "<button class=\"ds-btn-soft\">Gestionar presupuesto</button>",
-      "css": ".ds-btn-soft{background:rgba(124,250,158,.11);color:#7CFA9E;border:0;border-radius:12px;min-height:44px;padding:0 16px;font:700 14px system-ui,sans-serif;cursor:pointer;transition:transform .14s cubic-bezier(.23,1,.32,1),background-color .2s ease}.ds-btn-soft:hover{background:rgba(124,250,158,.17)}.ds-btn-soft:active{transform:scale(.97)}.ds-btn-soft:focus-visible{outline:2px solid #7CFA9E;outline-offset:2px}"
+      "css": ".ds-btn-soft{background:rgba(90,200,250,.11);color:#5AC8FA;border:0;border-radius:12px;min-height:44px;padding:0 16px;font:700 14px system-ui,sans-serif;cursor:pointer;transition:transform .14s cubic-bezier(.23,1,.32,1),background-color .2s ease}.ds-btn-soft:hover{background:rgba(90,200,250,.17)}.ds-btn-soft:active{transform:scale(.97)}.ds-btn-soft:focus-visible{outline:2px solid #5AC8FA;outline-offset:2px}"
     },
     {
       "name": "Input",
@@ -256,7 +261,7 @@
       "refersTo": "input",
       "description": "Amount fields and search.",
       "html": "<input class=\"ds-input\" placeholder=\"Ej. 500\">",
-      "css": ".ds-input{background:#202027;color:#EEEFF2;border:1px solid rgba(255,255,255,.05);border-radius:12px;min-height:44px;padding:0 12px;font:16px system-ui,sans-serif;caret-color:#7CFA9E}.ds-input::placeholder{color:#8D8F9A}.ds-input:focus{outline:none;border-color:#7CFA9E}"
+      "css": ".ds-input{background:#202027;color:#EEEFF2;border:1px solid rgba(255,255,255,.05);border-radius:12px;min-height:44px;padding:0 12px;font:16px system-ui,sans-serif;caret-color:#5AC8FA}.ds-input::placeholder{color:#8D8F9A}.ds-input:focus{outline:none;border-color:#5AC8FA}"
     },
     {
       "name": "Chip",
@@ -287,30 +292,25 @@
       "kind": "nav",
       "refersTo": "",
       "description": "Floating bottom navigation on phones.",
-      "html": "<nav class=\"ds-tabs\"><a aria-current=\"page\">Inicio</a><a>Gastos</a><a>Ritmo</a><a>Compromisos</a></nav>",
-      "css": ".ds-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;border-radius:22px;background:rgba(24,24,29,.82);backdrop-filter:blur(20px);box-shadow:0 12px 32px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);font:650 11px system-ui,sans-serif}.ds-tabs a{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:16px;color:#8D8F9A;cursor:pointer}.ds-tabs a[aria-current=page]{color:#7CFA9E;background:rgba(124,250,158,.11)}.ds-tabs a:hover{color:#BABCC5}"
+      "html": "<nav class=\"ds-tabs\"><a aria-current=\"page\">Inicio</a><a>Gastos</a><a>Ritmo</a><a>Compromisos</a><a>Resumen</a></nav>",
+      "css": ".ds-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px;border-radius:22px;background:rgba(24,24,29,.82);backdrop-filter:blur(20px);box-shadow:0 12px 32px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);font:650 11px system-ui,sans-serif}.ds-tabs a{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:16px;color:#8D8F9A;cursor:pointer}.ds-tabs a[aria-current=page]{color:#5AC8FA;background:rgba(90,200,250,.11)}.ds-tabs a:hover{color:#BABCC5}"
     }
   ],
   "narrative": {
     "northStar": "El Cartel 381",
-    "overview": "The dashboard reads the month the way a Lima chicha poster reads a concert: one loud, fluorescent band says where you stand, and everything around it stays calm and legible. The ground is the near-black of the 381 logo tile; the voice is the logo's green. Loudness is rationed to the things that need a decision: the month total, the state of the budget, and figures that crossed a line.\n\nIt is a working tool opened several times a day on a phone. Density is that of a daily app (cards of 18px padding, 12px gaps), rows and labels use the platform's own sans for speed, and only headline figures, tab titles and the state band switch to the condensed poster face. Motion is quiet: things arrive once, bars grow to show quantity, and nothing loops except the logo's dust trail.",
+    "overview": "The dashboard reads the month the way a Lima chicha poster reads a concert: one loud, fluorescent band says where you stand, and everything around it stays calm and legible. The ground is the near-black of the 381 logo tile; the interface speaks in a light sky blue (celeste), the owner's favourite colour, so that green, yellow and red are free to mean only one thing: how the month is going. Loudness is rationed to the things that need a decision: the month total, the state of the budget, and figures that crossed a line.\n\nIt is a working tool opened several times a day on a phone. Density is that of a daily app (cards of 18px padding, 12px gaps), rows and labels use the platform's own sans for speed, and only headline figures, tab titles and the state band switch to the condensed poster face. Motion is unhurried and alive: cards float up with a soft blur, bars grow, chart dots pop in, and small live details keep breathing (the newest point of a chart pings, today's calendar day glows, the \"en vivo\" dot beats). Every loop is built on transform and opacity so it costs almost no battery.",
     "keyCharacteristics": [
       "Dark only, on the 381 ground (#101014), with tonal layers instead of shadows.",
-      "One brand accent, the 381 green, which also means \"on pace\".",
-      "A three-step state vocabulary borrowed from chicha posters: green, yellow, pink.",
+      "One interface accent, celeste; the 381 green lives on in the logo and as the \"on pace\" light.",
+      "A three-light state vocabulary: green on pace, yellow tight, red over.",
       "Poster numerals (Anton) for the few numbers that matter most; system sans for everything you read in a list.",
-      "Motion that confirms and explains, never decorates."
+      "Unhurried motion with live details, tuned to the owner's taste (v13 timings), never repainting in a loop."
     ],
     "rules": [
       {
         "name": "The Three Lights Rule",
-        "body": "State is only ever green, yellow or pink, in that meaning. No other colour may say \"good\" or \"bad\".",
+        "body": "Green, yellow and red mean on pace, tight and over, and nothing else. The interface itself is celeste, so a coloured element is either the interface or a verdict, never ambiguous.",
         "section": "colors"
-      },
-      {
-        "name": "The Few Loud Numbers Rule",
-        "body": "Anton is reserved for tab and sheet titles, at most one hero figure per card, the daily cap and the state band. Rows, chips, metrics, buttons and labels always use the system sans.",
-        "section": "typography"
       },
       {
         "name": "The Tell Them Apart Rule",
@@ -319,8 +319,13 @@
       },
       {
         "name": "The No Borrowed Lights Rule",
-        "body": "Category colours stay clear of the exact state colours (OKLab distance at least 0.09 from the 381 green, chicha yellow and chicha pink).",
+        "body": "Category colours stay clear of the celeste accent and the three lights (OKLab distance at least 0.09).",
         "section": "colors"
+      },
+      {
+        "name": "The Few Loud Numbers Rule",
+        "body": "Anton is reserved for tab and sheet titles, at most one hero figure per card, the daily cap and the state band. Rows, chips, metrics, buttons and labels always use the system sans.",
+        "section": "typography"
       },
       {
         "name": "The No Eyebrow Rule",
@@ -336,15 +341,16 @@
     "dos": [
       "**Do** put the state of the month in the band, in its colour, before any explanation.",
       "**Do** run `python3 tools/verificar_colores.py dashboard/data.js` after changing any category colour; it must report 0 problems (see The Tell Them Apart Rule).",
-      "**Do** keep entrance motion to one pass: opacity plus 8px, 320ms cubic-bezier(0.23,1,0.32,1), 40ms stagger, bars growing from their base in 420ms.",
+      "**Do** keep the v13 rhythm: cards fadeUp 800ms (18px, slight blur) with 70ms stagger capped at 350ms, bars 900ms to 1s, lines draw in 1.2s, dots pop with a gentle overshoot, numbers count up in 1.2s, curve cubic-bezier(.16,1,.3,1).",
+      "**Do** build every loop (pings, glows, rings, beating dots, bobbing arrows) on transform or opacity of its own layer; never animate box-shadow, which made the old version burn about 2 s of CPU every 5 s.",
       "**Do** honour the global reduced-motion rule; every animation is plain CSS `animation`/`transition` so it switches off.",
-      "**Do** use drawn SVG icons in one 2px stroke family."
+      "**Do** take new icons from Tabler (outline) so the stroke family stays consistent."
     ],
     "donts": [
-      "**Don't** use green, yellow or pink for anything that is not a state (see The Three Lights Rule).",
+      "**Don't** use green, yellow or red for anything that is not a state (see The Three Lights Rule).",
       "**Don't** set rows, chips, metrics or buttons in Anton.",
-      "**Don't** add infinite decorative animations (pulsing dots, bobbing arrows, glowing bars); the only loops are the 381 logo trail and the \"Actualizando\" indicator.",
-      "**Don't** reintroduce a light theme or the old violet accent."
+      "**Don't** speed motion up below the v13 timings; the owner prefers the slower feel.",
+      "**Don't** reintroduce a light theme, the old violet accent, or green as the interface colour."
     ]
   }
 }
