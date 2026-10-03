@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-03T19:39:56Z",
+  "title": "Design System: Finanzas 381",
+  "extensions": {
+    "colorMeta": {
+      "verde-381": {
+        "role": "primary",
+        "displayName": "Verde 381",
+        "canonical": "#7CFA9E",
+        "tonalRamp": [
+          "#22442B",
+          "#3D7B4E",
+          "#58B170",
+          "#73E893",
+          "#93FBAF",
+          "#B6FCC9",
+          "#D6FDE1",
+          "#F0FEF4"
+        ]
+      },
+      "amarillo-chicha": {
+        "role": "secondary",
+        "displayName": "Amarillo Chicha",
+        "canonical": "#FFD84D",
+        "tonalRamp": [
+          "#463B15",
+          "#7D6A26",
+          "#B59937",
+          "#ECC847",
+          "#FFDF6D",
+          "#FFE99C",
+          "#FFF3C8",
+          "#FFFBEB"
+        ]
+      },
+      "rosa-chicha": {
+        "role": "secondary",
+        "displayName": "Rosa Chicha",
+        "canonical": "#FF5C7A",
+        "tonalRamp": [
+          "#461921",
+          "#7D2D3C",
+          "#B54157",
+          "#EC5571",
+          "#FF7992",
+          "#FFA4B5",
+          "#FFCCD6",
+          "#FFEDF0"
+        ]
+      },
+      "naranja-aviso": {
+        "role": "tertiary",
+        "displayName": "Naranja Aviso",
+        "canonical": "#FFA94D",
+        "tonalRamp": [
+          "#462E15",
+          "#7D5326",
+          "#B57837",
+          "#EC9D47",
+          "#FFB86D",
+          "#FFCF9C",
+          "#FFE4C8",
+          "#FFF5EB"
+        ]
+      },
+      "cian-info": {
+        "role": "tertiary",
+        "displayName": "Cian Info",
+        "canonical": "#5CE1E6",
+        "tonalRamp": [
+          "#193D3F",
+          "#2D6E71",
+          "#41A0A3",
+          "#55D1D5",
+          "#79E6EA",
+          "#A4EEF1",
+          "#CCF6F7",
+          "#EDFCFC"
+        ]
+      },
+      "ground-381": {
+        "role": "neutral",
+        "displayName": "381 Ground",
+        "canonical": "#101014",
+        "tonalRamp": [
+          "#040405",
+          "#08080A",
+          "#0B0B0E",
+          "#0F0F13",
+          "#3A3A3E",
+          "#7A7A7C",
+          "#B5B5B6",
+          "#E4E4E5"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Card",
+        "canonical": "#18181D",
+        "tonalRamp": [
+          "#070708",
+          "#0C0C0E",
+          "#111115",
+          "#16161B",
+          "#414145",
+          "#7F7F81",
+          "#B7B7B9",
+          "#E5E5E6"
+        ]
+      },
+      "sunken": {
+        "role": "neutral",
+        "displayName": "Sunken",
+        "canonical": "#202027",
+        "tonalRamp": [
+          "#09090B",
+          "#101013",
+          "#17171C",
+          "#1E1E24",
+          "#48484D",
+          "#838387",
+          "#BABABC",
+          "#E6E6E7"
+        ]
+      },
+      "label": {
+        "role": "neutral",
+        "displayName": "Label",
+        "canonical": "#EEEFF2",
+        "tonalRamp": [
+          "#414142",
+          "#757577",
+          "#A9A9AC",
+          "#DDDEE0",
+          "#F1F2F4",
+          "#F6F6F8",
+          "#FAFAFB",
+          "#FDFDFE"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "cartel-hero": {
+        "displayName": "Cartel hero",
+        "purpose": "Month total, budget total and sheet totals."
+      },
+      "cartel-title": {
+        "displayName": "Cartel title",
+        "purpose": "Uppercase tab title beside the month selector."
+      },
+      "cartel-band": {
+        "displayName": "Cartel band",
+        "purpose": "State word inside the state band only."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card headings in sentence case."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Explanatory sentences inside cards."
+      },
+      "row": {
+        "displayName": "Row",
+        "purpose": "List names and amounts."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Metric labels, captions, axis labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-edge",
+        "value": "inset 0 1px 0 rgba(255,255,255,0.05)",
+        "purpose": "Top highlight on every card; no drop shadow."
+      },
+      {
+        "name": "float-bar",
+        "value": "0 12px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)",
+        "purpose": "Mobile floating tab bar."
+      },
+      {
+        "name": "sheet",
+        "value": "inset 0 1px 0 rgba(255,255,255,0.07), 0 -12px 40px rgba(0,0,0,0.5)",
+        "purpose": "Bottom sheet above the page."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Entrances, press feedback, bars growing."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.77, 0, 0.175, 1)",
+        "purpose": "Segmented-control pill moving on screen."
+      },
+      {
+        "name": "ease-drawer",
+        "value": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "purpose": "Bottom sheet: 420ms in, 300ms out."
+      },
+      {
+        "name": "card-in",
+        "value": "320ms ease-out, opacity + translateY(8px), 40ms stagger capped at 200ms",
+        "purpose": "Cards on first load only."
+      },
+      {
+        "name": "press",
+        "value": "scale(0.97) 140ms ease-out",
+        "purpose": "Buttons and icon buttons."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "narrow",
+        "value": "480px"
+      },
+      {
+        "name": "tablet",
+        "value": "600px"
+      },
+      {
+        "name": "desktop-rail",
+        "value": "880px"
+      },
+      {
+        "name": "desktop-grid",
+        "value": "1150px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main commit per view.",
+      "html": "<button class=\"ds-btn-primary\">Guardar</button>",
+      "css": ".ds-btn-primary{background:#7CFA9E;color:#07210F;border:0;border-radius:12px;min-height:44px;padding:0 16px;font:700 14px system-ui,sans-serif;cursor:pointer;transition:transform .14s cubic-bezier(.23,1,.32,1),background-color .2s ease}.ds-btn-primary:hover{background:#62E888}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #7CFA9E;outline-offset:2px}"
+    },
+    {
+      "name": "Soft Button",
+      "kind": "button",
+      "refersTo": "button-soft",
+      "description": "Secondary actions such as Gestionar presupuesto.",
+      "html": "<button class=\"ds-btn-soft\">Gestionar presupuesto</button>",
+      "css": ".ds-btn-soft{background:rgba(124,250,158,.11);color:#7CFA9E;border:0;border-radius:12px;min-height:44px;padding:0 16px;font:700 14px system-ui,sans-serif;cursor:pointer;transition:transform .14s cubic-bezier(.23,1,.32,1),background-color .2s ease}.ds-btn-soft:hover{background:rgba(124,250,158,.17)}.ds-btn-soft:active{transform:scale(.97)}.ds-btn-soft:focus-visible{outline:2px solid #7CFA9E;outline-offset:2px}"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Amount fields and search.",
+      "html": "<input class=\"ds-input\" placeholder=\"Ej. 500\">",
+      "css": ".ds-input{background:#202027;color:#EEEFF2;border:1px solid rgba(255,255,255,.05);border-radius:12px;min-height:44px;padding:0 12px;font:16px system-ui,sans-serif;caret-color:#7CFA9E}.ds-input::placeholder{color:#8D8F9A}.ds-input:focus{outline:none;border-color:#7CFA9E}"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Comparison chips beside a hero figure.",
+      "html": "<span class=\"ds-chip\">prom. 3m <b>S/ 4,563</b></span> <span class=\"ds-chip ds-up\">2% vs Sep</span>",
+      "css": ".ds-chip{display:inline-flex;gap:5px;background:#202027;color:#BABCC5;border-radius:8px;padding:6px 10px;font:550 12.5px system-ui,sans-serif}.ds-chip b{color:#EEEFF2}.ds-up{background:rgba(255,92,122,.14);color:#FF5C7A;font-weight:700}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Every content container.",
+      "html": "<section class=\"ds-card\"><h2>Gasto del mes</h2><div class=\"ds-hero\">S/ 4,153</div></section>",
+      "css": ".ds-card{background:#18181D;border-radius:18px;padding:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);color:#EEEFF2;font-family:system-ui,sans-serif}.ds-card h2{margin:0 0 10px;font-size:15px;font-weight:650}.ds-hero{font-family:Anton,'Arial Narrow',sans-serif;font-size:64px;line-height:.92}"
+    },
+    {
+      "name": "State Band",
+      "kind": "custom",
+      "refersTo": "state-tag",
+      "description": "Signature: the month's state as a full-width poster band at the top of the Meta card.",
+      "html": "<div class=\"ds-cartel\"><b>Vas justo</b><span>Meta S/ 5,000</span></div>",
+      "css": ".ds-cartel{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;background:#FFD84D;color:#101014;padding:16px 18px 14px;border-radius:18px 18px 0 0}.ds-cartel b{font-family:Anton,'Arial Narrow',sans-serif;font-weight:400;font-size:38px;line-height:.9;text-transform:uppercase}.ds-cartel span{font:700 13px system-ui,sans-serif;color:rgba(16,16,20,.74)}"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "",
+      "description": "Floating bottom navigation on phones.",
+      "html": "<nav class=\"ds-tabs\"><a aria-current=\"page\">Inicio</a><a>Gastos</a><a>Ritmo</a><a>Compromisos</a></nav>",
+      "css": ".ds-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;border-radius:22px;background:rgba(24,24,29,.82);backdrop-filter:blur(20px);box-shadow:0 12px 32px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);font:650 11px system-ui,sans-serif}.ds-tabs a{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:16px;color:#8D8F9A;cursor:pointer}.ds-tabs a[aria-current=page]{color:#7CFA9E;background:rgba(124,250,158,.11)}.ds-tabs a:hover{color:#BABCC5}"
+    }
+  ],
+  "narrative": {
+    "northStar": "El Cartel 381",
+    "overview": "The dashboard reads the month the way a Lima chicha poster reads a concert: one loud, fluorescent band says where you stand, and everything around it stays calm and legible. The ground is the near-black of the 381 logo tile; the voice is the logo's green. Loudness is rationed to the things that need a decision: the month total, the state of the budget, and figures that crossed a line.\n\nIt is a working tool opened several times a day on a phone. Density is that of a daily app (cards of 18px padding, 12px gaps), rows and labels use the platform's own sans for speed, and only headline figures, tab titles and the state band switch to the condensed poster face. Motion is quiet: things arrive once, bars grow to show quantity, and nothing loops except the logo's dust trail.",
+    "keyCharacteristics": [
+      "Dark only, on the 381 ground (#101014), with tonal layers instead of shadows.",
+      "One brand accent, the 381 green, which also means \"on pace\".",
+      "A three-step state vocabulary borrowed from chicha posters: green, yellow, pink.",
+      "Poster numerals (Anton) for the few numbers that matter most; system sans for everything you read in a list.",
+      "Motion that confirms and explains, never decorates."
+    ],
+    "rules": [
+      {
+        "name": "The Three Lights Rule",
+        "body": "State is only ever green, yellow or pink, in that meaning. No other colour may say \"good\" or \"bad\".",
+        "section": "colors"
+      },
+      {
+        "name": "The No Borrowed Lights Rule",
+        "body": "Category colours never use pink/red, the 381 green or chicha yellow, so a category can never be misread as a state.",
+        "section": "colors"
+      },
+      {
+        "name": "The Lift Rule",
+        "body": "Any colour drawn on the ground passes through `paraOscuro()` (HSL lightness at least 64%); never place a raw dark colour on #101014.",
+        "section": "colors"
+      },
+      {
+        "name": "The Few Loud Numbers Rule",
+        "body": "Anton is reserved for tab and sheet titles, at most one hero figure per card, the daily cap and the state band. Rows, chips, metrics, buttons and labels always use the system sans.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Eyebrow Rule",
+        "body": "Card headings are real headings in sentence case; there are no small uppercase tracked labels above them.",
+        "section": "typography"
+      },
+      {
+        "name": "The Float-Only Shadow Rule",
+        "body": "A shadow means \"this is above the page\" (tab bar, sheet). Cards never carry a drop shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** put the state of the month in the band, in its colour, before any explanation.",
+      "**Do** lift every category colour before using it on the ground (see The Lift Rule).",
+      "**Do** keep entrance motion to one pass: opacity plus 8px, 320ms cubic-bezier(0.23,1,0.32,1), 40ms stagger, bars growing from their base in 420ms.",
+      "**Do** honour the global reduced-motion rule; every animation is plain CSS `animation`/`transition` so it switches off.",
+      "**Do** use drawn SVG icons in one 2px stroke family."
+    ],
+    "donts": [
+      "**Don't** use green, yellow or pink for anything that is not a state (see The Three Lights Rule).",
+      "**Don't** set rows, chips, metrics or buttons in Anton.",
+      "**Don't** add infinite decorative animations (pulsing dots, bobbing arrows, glowing bars); the only loops are the 381 logo trail and the \"Actualizando\" indicator.",
+      "**Don't** reintroduce a light theme or the old violet accent."
+    ]
+  }
+}

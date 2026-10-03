@@ -1,8 +1,9 @@
-const CACHE = 'finanzas-shell-v5';
+const CACHE = 'finanzas-shell-v6';
 const SHELL = [
   'index.html', 'gastos.html', 'ritmo.html', 'compromisos.html',
   'style.css', 'data.js', 'app.js', 'manifest.json',
-  'icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png'
+  'icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png',
+  'fonts/anton-latin.woff2'
 ];
 
 self.addEventListener('install', e => {

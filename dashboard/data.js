@@ -217,29 +217,50 @@ function mensajeError(err){
 function norm(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\.$/,'').trim(); }
 
 /* ---------- colores por concepto ---------- */
-const COLOR_N1 = { 'personal':'#5B5BD6', 'social':'#E0457B', 'finanzas':'#0D9488', 'ingresos':'#16A34A', 'terceros':'#D97706' };
+/* v14: paleta de categorías para fondo oscuro. Sin rosas/rojos (reservados para "te pasaste")
+   ni verdes (reservados para "vas bien") ni amarillo chicha ("vas justo"). */
+const COLOR_N1 = { 'personal':'#7AA7FF', 'social':'#B28CFF', 'finanzas':'#56C8D8', 'ingresos':'#E8C27A', 'terceros':'#F2A65A' };
 const COLOR_N2 = {
-  'fijo':'#3B7DD8', 'variable':'#F97316', 'salud y bienestar':'#10B981', 'auto y movilidad':'#64748B',
-  'pareja':'#EC4899', 'amigos':'#F59E0B', 'trabajo':'#0891B2', 'inversiones y ahorro':'#16A34A', 'prestamos':'#8B5CF6'
+  'fijo':'#7AA7FF', 'variable':'#F2A65A', 'salud y bienestar':'#4FD1C5', 'auto y movilidad':'#A0A8BC',
+  'pareja':'#D0A8FF', 'amigos':'#E8C27A', 'trabajo':'#6CC6FF', 'inversiones y ahorro':'#56C8D8', 'prestamos':'#B28CFF'
 };
 const COLOR_N3 = {
-  'vivienda':'#6366F1','servicios':'#F59E0B','suscripciones':'#8B5CF6','seguros':'#155E75','educacion':'#2563EB',
-  'comida diaria':'#F97316','ropa':'#DB2777','cuidado personal':'#14B8A6','mascotas':'#A16207','tecnologia':'#475569','ocio y hobbies':'#7C3AED',
-  'consultas medicas':'#0EA5E9','medicinas':'#10B981','deporte':'#22C55E',
-  'combustible':'#DC2626','cochera':'#64748B','mantenimiento y estetica':'#0D9488','peajes':'#CA8A04','transporte publico':'#1D4ED8',
-  'comida casual':'#FB923C','comida especial':'#E11D48','regalos':'#EC4899','escapadas':'#0891B2','detalles':'#F472B6',
-  'comidas':'#EA580C','diversion salidas':'#A855F7','viajes paseos':'#2DD4BF',
-  'almuerzos oficina':'#65A30D','transporte':'#3B82F6','eventos':'#D946EF',
-  'compra acciones etfs':'#059669','fondo de emergencia':'#0284C7'
+  'vivienda':'#9AA2FF','servicios':'#E8C27A','suscripciones':'#B28CFF','seguros':'#8DB4C8','educacion':'#7AA7FF',
+  'comida diaria':'#F2A65A','ropa':'#E58CFF','cuidado personal':'#4FD1C5','mascotas':'#C9C27A','tecnologia':'#A0A8BC','ocio y hobbies':'#B28CFF',
+  'consultas medicas':'#6CC6FF','medicinas':'#4FD1C5','deporte':'#56C8D8',
+  'combustible':'#F2A65A','cochera':'#A0A8BC','mantenimiento y estetica':'#4FD1C5','peajes':'#C9C27A','transporte publico':'#7AA7FF',
+  'comida casual':'#F2A65A','comida especial':'#D0A8FF','regalos':'#E58CFF','escapadas':'#6CC6FF','detalles':'#D0A8FF',
+  'comidas':'#E8C27A','diversion salidas':'#B28CFF','viajes paseos':'#56C8D8',
+  'almuerzos oficina':'#6CC6FF','transporte':'#7AA7FF','eventos':'#E58CFF',
+  'compra acciones etfs':'#56C8D8','fondo de emergencia':'#8DB4C8'
 };
-const PALETA_RESERVA = ['#4F46E5','#DB2777','#059669','#D97706','#7C3AED','#0891B2','#DC2626','#65A30D','#C026D3','#0284C7','#B45309','#15803D'];
+/* v14 · sistema 381 (solo oscuro): colores de estado de la marca. Los de categoría se
+   aclaran al dibujar (ver colorDe) para que se lean sobre el fondo casi negro. */
+const TINTA = { accent:'#7CFA9E', ok:'#7CFA9E', justo:'#FFD84D', alto:'#FF5C7A', warn:'#FFA94D', info:'#5CE1E6', neutro:'#6B6E7A' };
+const PALETA_RESERVA = ['#7AA7FF','#B28CFF','#4FD1C5','#E8C27A','#6CC6FF','#D0A8FF','#F2A65A','#A0A8BC','#C9C27A','#9AA2FF','#56C8D8','#E58CFF'];
 function _hash(t, n){ let h = 0; for(let i=0;i<t.length;i++) h = (h*31 + t.charCodeAt(i)) >>> 0; return h % n; }
-function colorDe(nombre, nivel){
+function colorDe(nombre, nivel){ return paraOscuro(colorBase(nombre, nivel)); }
+function colorBase(nombre, nivel){
   const k = norm(nombre);
   if(nivel === 1 && COLOR_N1[k]) return COLOR_N1[k];
   if(nivel === 2 && COLOR_N2[k]) return COLOR_N2[k];
   if(nivel === 3 && COLOR_N3[k]) return COLOR_N3[k];
   return COLOR_N2[k] || COLOR_N3[k] || COLOR_N1[k] || PALETA_RESERVA[_hash(k, PALETA_RESERVA.length)];
+}
+/** v14: mismo tono, más luz. Sube la luminosidad (HSL) a un mínimo de 64% para que
+    íconos, barras y textos de color se lean sobre #101014 sin cambiar de identidad. */
+const _oscuroCache = {};
+function paraOscuro(hex){
+  if(_oscuroCache[hex]) return _oscuroCache[hex];
+  let r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255;
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b); let h = 0, sa = 0, l = (mx+mn)/2;
+  if(mx !== mn){ const d = mx-mn; sa = l > 0.5 ? d/(2-mx-mn) : d/(mx+mn);
+    h = mx === r ? (g-b)/d + (g < b ? 6 : 0) : mx === g ? (b-r)/d + 2 : (r-g)/d + 4; h /= 6; }
+  l = Math.max(l, 0.64); sa = Math.min(sa, 0.92);
+  const q = l < 0.5 ? l*(1+sa) : l+sa-l*sa, pp = 2*l-q;
+  const f = t => { t = (t+1)%1; return t < 1/6 ? pp+(q-pp)*6*t : t < 1/2 ? q : t < 2/3 ? pp+(q-pp)*(2/3-t)*6 : pp; };
+  const out = '#' + [h+1/3, h, h-1/3].map(t => Math.round(f(t)*255).toString(16).padStart(2,'0')).join('').toUpperCase();
+  return (_oscuroCache[hex] = out);
 }
 function alpha(hex, a){
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -304,7 +325,7 @@ function icono(nombre, color, tam, grosor){
 function iconoFila(r){ return r.cat3 && ICONOS[norm(r.cat3)] ? r.cat3 : (r.cat2 || r.cat1); }
 function colorFila(r){ return r.cat3 && COLOR_N3[norm(r.cat3)] ? colorDe(r.cat3,3) : colorDe(r.cat2 || r.cat1, 2); }
 function tile(nombre, color, chico){
-  return `<span class="tile${chico?' sm':''}" style="background:${alpha(color,0.12)}">${icono(nombre, color, chico?16:18)}</span>`;
+  return `<span class="tile${chico?' sm':''}" style="background:${alpha(color,0.14)}">${icono(nombre, color, chico?16:18)}</span>`;
 }
 const SVG = {
   home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
@@ -323,7 +344,8 @@ const SVG = {
   card:'<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/>',
   pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
   moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
-  atras:'<path d="M19 12H5"/><path d="m11 18-6-6 6-6"/>'
+  atras:'<path d="M19 12H5"/><path d="m11 18-6-6 6-6"/>',
+  arribaF:'<path d="M12 19V5"/><path d="m6 11 6-6 6 6"/>', abajoF:'<path d="M12 5v14"/><path d="m6 13 6 6 6-6"/>'
 };
 function svg(nombre, tam, color, grosor){
   return `<svg width="${tam||16}" height="${tam||16}" viewBox="0 0 24 24" fill="none" stroke="${color||'currentColor'}" stroke-width="${grosor||2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG[nombre]}</svg>`;
@@ -352,8 +374,8 @@ function textoTendencia(pendiente, promedio){
 const NOMBRE_DIA       = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const NOMBRE_DIA_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const GRUPOS_DIA = [
-  { id:'lj', nombre:'Lunes a jueves', corto:'Lun–Jue', dias:[1,2,3,4], color:'#3B7DD8', desc:'semana de oficina' },
-  { id:'vd', nombre:'Viernes a domingo', corto:'Vie–Dom', dias:[5,6,0], color:'#EC4899', desc:'fin de semana largo' }
+  { id:'lj', nombre:'Lunes a jueves', corto:'Lun-Jue', dias:[1,2,3,4], color:'#7AB4FF', desc:'semana de oficina' },
+  { id:'vd', nombre:'Viernes a domingo', corto:'Vie-Dom', dias:[5,6,0], color:'#D0A8FF', desc:'fin de semana largo' }
 ];
 /** Día hasta el que cuenta el mes: hoy si es el mes en curso; si no, el último día */
 function diaLimite(mesKey){
