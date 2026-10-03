@@ -257,6 +257,20 @@ Tabler Icons (MIT), outline, 2px stroke on a 24px grid, copied as paths into dat
 ### Resumen (fifth tab)
 The last six months: period total in Anton with six metric tiles, a months-by-category heat map (intensity = that category's own highest month; on phones the name sits above its row), "Qué cambió" with diverging bars (red right for increases, green left for decreases, same days of the previous month while a month is in progress) and the period's merchants.
 
+### Data details (v16)
+Small pieces that add information, each with its own motion:
+- **Meta bar:** what you have spent (solid), where you will close at this pace (translucent fill with a 1.5px outline in the state colour, grows 1.1 s after the fill) and the ideal-pace mark (appears last, blinks softly). A legend names all three.
+- **Ideal-pace tick:** a 2px mark on every budget bar (Gastos subcategories, Ritmo budget categories, the category sheet meter) at today's share of the month, so "ahead of pace" is visible before a budget is exceeded.
+- **Touch layer on line charts:** touching, dragging, hovering or arrowing over Tendencia and Ritmo del mes shows a hairline guide, a dot and a raised card with the value, the month or day, and the distance to the Meta or ideal pace (green under, red over). Guide and card follow with a 160ms ease-out.
+- **Close projection:** Ritmo del mes extends the accumulated line from today to the end of the month as a dotted line in the state colour, ending in "cierre ~S/ X".
+- **Interactive donut:** tapping a legend row or a slice pins that category (others fade to 18%); its amount and share replace the total in the centre with a short rise. Hover previews on desktop.
+- **Fixed-charge timeline:** the month as a line with today's position; paid charges are green dots, pending ones orange rings, same-day charges merge into one dot with a count, plus the next charge and how many days away.
+- **Notice:** a pill that drops from the top (450ms) for new movements after a refresh, "ya estás al día" on a manual refresh, or a connection error.
+- **Saved feedback:** a budget field flashes green with a check that pops in when a changed amount is saved.
+- **Search highlight:** the matched text is marked in celeste inside each result, ignoring accents and case.
+- **Month list:** each day header carries that day's total.
+- **Payment methods:** one row per method with its debit/credit split, at most six colours plus grey.
+
 ## Do's and Don'ts
 
 ### Do:
