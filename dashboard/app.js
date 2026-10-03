@@ -249,7 +249,7 @@ function curvaSVG(valores, etiquetas, opt){
   }
   const ym = opt.meta ? bot - opt.meta / tope * (bot - top) : null;
   if(opt.meta){
-    s += `<line x1="${x0 - 6}" y1="${ym.toFixed(1)}" x2="${W}" y2="${ym.toFixed(1)}" stroke="var(--label-2)" stroke-width="1" opacity="0.55"/><text x="${W}" y="${(ym - 5).toFixed(1)}" text-anchor="end" font-size="10" font-weight="700" fill="var(--label-3)">meta</text>`;
+    s += `<line x1="${x0 - 6}" y1="${ym.toFixed(1)}" x2="${W}" y2="${ym.toFixed(1)}" stroke="var(--label-2)" stroke-width="1.2" opacity="0.85"/><text x="${W}" y="${(ym - 5).toFixed(1)}" text-anchor="end" font-size="10" font-weight="700" fill="var(--label-2)">meta</text>`;
   }
   if(n > 1){
     s += `<path d="${area}" fill="url(#${id})" class="fi"/>`;
