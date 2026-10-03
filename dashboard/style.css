@@ -101,13 +101,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 /* indicador de conexión: el punto solo se mueve mientras actualiza (estado, no adorno) */
 .live{ border:0; font-family:inherit; cursor:pointer; white-space:nowrap; flex-shrink:0; display:inline-flex; align-items:center; gap:6px;
-  min-height:32px; font-size:12px; font-weight:700; color:var(--ok); background:var(--ok-soft); padding:0 11px; border-radius:999px;
+  min-height:32px; font-size:12px; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:0 11px; border-radius:999px;
   transition:background-color .2s ease, color .2s ease, transform .14s var(--ease-out); }
 .live i{ position:relative; width:7px; height:7px; border-radius:2px; background:currentColor; animation:latido 2s ease-in-out infinite; }
 .live i::after{ content:''; position:absolute; inset:0; border-radius:inherit; background:currentColor; animation:anillo 2s ease-out infinite; }
 .live.off i, .live.off i::after{ animation:none; }
 .live.off{ color:var(--label-3); background:var(--fill); }
-.live.sync{ color:var(--justo); background:rgba(255,216,77,0.12); }
+.live.sync{ color:var(--accent); background:var(--accent-soft-2); }
 .live.sync i, .live.sync i::after{ animation-duration:1s; }
 
 .title-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
@@ -483,6 +483,8 @@ button.row:active, a.row:active, .loan.tap:active, .row-tap-inner:active{ backgr
 }
 @media (min-width:600px){ .wrap{ padding-top:28px; } .res-metrics{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media (max-width:480px){ .hint-tap{ display:none; } }
+@media (max-width:400px){ .tabbar{ padding:5px; gap:0; } .tabbar a{ font-size:9.5px; letter-spacing:-0.02em; } }
+@media (max-width:340px){ .tabbar{ width:calc(100% - 12px); padding:4px; } .tabbar a{ font-size:8.5px; letter-spacing:-0.03em; } }
 
 /* ============================================================
    Vista de escritorio

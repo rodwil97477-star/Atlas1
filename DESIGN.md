@@ -151,7 +151,7 @@ A near-black ground with one celeste interface accent and a green/yellow/red tra
 - **Celeste**: the interface. Primary and soft buttons, current tab, selection, focus ring, links, the spending line and calendar heat, the "nuevo" tag, today's ring in the calendar.
 
 ### Secondary (traffic light, information only)
-- **Verde OK**: "en camino", spend that went down, "en vivo", paid fixed charges.
+- **Verde OK**: "en camino", spend that went down, paid fixed charges. (The "En vivo" connection pill is celeste: it is interface status, not a verdict.)
 - **Amarillo Justo**: "vas justo" (projection within 90 to 100% of the Meta), budget bars at 90% or more, the "Actualizando" connection state.
 - **Rojo Alto**: "te pasaste / vas a pasarte", spend that went up, over-budget rows, the Meta line in charts, gate errors.
 - The "Para no pasarte / Para frenar" box takes the colour of the month's state, so a green box always means the month is going well.

@@ -358,6 +358,7 @@ function listaConMas(filas, n, render, etiqueta){
   const id = 'l' + (++_gid);
   const vis = filas.slice(0, n).map(render).join('');
   const resto = filas.length - n;
+  if(Array.isArray(etiqueta)) etiqueta = resto === 1 ? etiqueta[0] : etiqueta[1];   // v15: [singular, plural]
   return `<div class="list" id="${id}">${vis}</div>${resto > 0 ? `<button class="more" data-mas="${id}" data-n="${n}" style="align-self:center">Ver ${resto} ${etiqueta || 'más'}</button>` : ''}`;
 }
 /** Conecta los botones "Ver más" de un contenedor */
@@ -540,7 +541,7 @@ function hojaDetalle(opt){
     ${comp}
     <div>
       <div class="block-label">${delMes.length} movimiento${delMes.length === 1 ? '' : 's'} en ${monthLabel(k)} · de mayor a menor</div>
-      ${delMes.length ? listaConMas(delMes, 8, r => filaMov(r, { sub: r2 => [opt.subFila ? opt.subFila(r2) : r2.cat3, r2.medio].filter(Boolean).join(' · ') }), 'movimientos más') : '<div class="empty">Sin movimientos este mes.</div>'}
+      ${delMes.length ? listaConMas(delMes, 8, r => filaMov(r, { sub: r2 => [opt.subFila ? opt.subFila(r2) : r2.cat3, r2.medio].filter(Boolean).join(' · ') }), ['movimiento más', 'movimientos más']) : '<div class="empty">Sin movimientos este mes.</div>'}
     </div>`;
   abrirHoja({ titulo: opt.titulo, ruta: opt.ruta, colorRuta: opt.colorRuta, icono: opt.icono, color: col, html,
     reabrir: () => hojaDetalle(opt),
@@ -932,7 +933,7 @@ function buscar(){
   const id = 'bRes';
   res.innerHTML = `<section class="card tight view-in" aria-live="polite">
     ${head('Resultados', `<span class="hint">${hits.length} movimiento${hits.length === 1 ? '' : 's'}${hits.length ? ' · S/ ' + fmtMonto(suma(hits)) : ''}</span>`)}
-    ${hits.length ? listaConMas(hits, 30, r => filaMov(r, { sub: r2 => [r2.cat3 || r2.cat2, monthShortYear(monthKey(r2.fecha))].filter(Boolean).join(' · ') }), 'resultados más').replace(/id="l\d+"/, 'id="' + id + '"').replace(/data-mas="l\d+"/, 'data-mas="' + id + '"')
+    ${hits.length ? listaConMas(hits, 30, r => filaMov(r, { sub: r2 => [r2.cat3 || r2.cat2, monthShortYear(monthKey(r2.fecha))].filter(Boolean).join(' · ') }), ['resultado más', 'resultados más']).replace(/id="l\d+"/, 'id="' + id + '"').replace(/data-mas="l\d+"/, 'data-mas="' + id + '"')
       : `<div class="empty">Sin resultados para “${escapeHtml(BUSQ)}”. Prueba con un comercio, una categoría o un monto.</div>`}
     <span class="hint" style="text-align:center;padding-top:8px">${COMPLETO ? 'Buscando en todo tu historial' : `Buscando en los últimos ${MESES.length} meses · para ir más atrás elige "Ver meses anteriores" en el selector de mes`}</span></section>`;
   enlazarMas(res, { [id]: { filas: hits, render: r => filaMov(r, { sub: r2 => [r2.cat3 || r2.cat2, monthShortYear(monthKey(r2.fecha))].filter(Boolean).join(' · ') }) } });
@@ -1409,7 +1410,7 @@ function paginaResumen(){
 
   html += card(`${head('Qué cambió', `<span class="hint">vs ${actual ? 'mismos días de ' : ''}${monthShort(prev)}</span>`)}
     ${cambios.length ? `<div class="chips"><span class="chip up">${flecha(true)} subió S/ ${fmtMonto(sube)}</span><span class="chip down">${flecha(false)} bajó S/ ${fmtMonto(baja)}</span></div>
-    ${listaConMas(cambios, 6, filaCambio, 'categorías más')}` : '<div class="empty">Sin cambios contra el mes anterior.</div>'}`, 'tight');
+    ${listaConMas(cambios, 6, filaCambio, ['categoría más', 'categorías más'])}` : '<div class="empty">Sin cambios contra el mes anterior.</div>'}`, 'tight');
 
   /* comercios del periodo */
   const coms = agrupar(filasP.filter(r => r.comercio), r => r.comercio).slice(0, 8);
