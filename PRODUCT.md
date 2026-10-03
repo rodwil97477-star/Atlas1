@@ -1,0 +1,55 @@
+# Product
+
+<!-- impeccable:product-schema 1 -->
+
+## Platform
+
+web
+
+## Users
+
+One person (Rodrigo) tracking his own money. He logs expenses through a Telegram bot that writes to Google Sheets, then opens this PWA on his phone (installed to the home screen) and occasionally on a desktop browser to see where the month stands. Typical moments: a quick glance after paying something, a check before a weekend, and a sit-down review at month end to set or adjust budgets.
+
+## Product Purpose
+
+"Finanzas": a personal finance dashboard that answers, at a glance, how much he has spent this month, whether he is on track against his budget (Meta), where the money went, what fixed charges are pending, and who owes him money. Success is knowing the state of the month in seconds and deciding what to adjust.
+
+## Positioning
+
+Built around his own categorisation tree (cat1 > cat2 > cat3), his bot, and his rituals. Budgets are composed bottom-up: per-subcategory amounts plus a free margin add up to the monthly Meta, and every screen compares real spend against that pace.
+
+## Operating Context
+
+- Data arrives live from a Google Apps Script endpoint (`egresos`, `prestamos`, `presupuestos`); a local copy opens instantly, then refreshes.
+- Four tabs: Inicio (month total, Meta, alerts, trend, latest movements), Gastos (by category, merchant, payment method, search), Ritmo (daily rhythm, calendar, weekday/hour patterns, budget pacing), Compromisos (fixed charges, recurring detection, loans receivable).
+- Detail sheets drill into subcategory, merchant, payment method and person; budgets are edited in a "Presupuesto" sheet.
+- Currency is soles (S/), Spanish (Peru) copy, month selector shared across tabs.
+- Access gate with a device passcode.
+
+## Capabilities and Constraints
+
+- Static site: HTML + CSS + vanilla JS, no build step, deployed on Netlify; service worker caches the shell.
+- No external libraries or fonts today; all charts are hand-drawn SVG/CSS.
+- Must keep every function, calculation, data field, storage key and copy meaning. Layout order inside a tab may change; features may not be removed.
+- Global rule: `@media (prefers-reduced-motion: reduce)` disables animations.
+
+## Brand Commitments
+
+- Personal brand "381": pixel/dot-matrix numeral, tilted -12 degrees, green `#7CFA9E` on near-black `#101014`. Animated logo lives in the header (34x34, radius 10). Icons already generated from this mark.
+- Confirmed by the user (2026-10-03): the whole app adopts the 381 identity, dark-only, with `#7CFA9E` as the accent.
+
+## Evidence on Hand
+
+- Real data only through the live bot endpoint; no sample dataset in the repo. Previews must use clearly labelled mock data.
+- Logo assets: `icon-*.png`, `apple-touch-icon.png`, `logo-381.html`, `logo-381.css`.
+
+## Product Principles
+
+1. The state of the month in one glance: the number and whether it is on pace come first.
+2. Every number is comparable: against the Meta, last month, or his own average.
+3. Calm by default, loud only when something needs action (over budget, price rise, pending charge).
+4. Fast on a phone: opens instantly from cache, no heavy dependencies.
+
+## Accessibility & Inclusion
+
+Respect `prefers-reduced-motion`; maintain WCAG AA text contrast on the dark surface; tap targets at least 44px.
