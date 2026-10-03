@@ -885,7 +885,7 @@ function vistaComercios(k, filas){
     <div class="list">${topH.map(g => `<button class="row" data-com="${escapeHtml(g.clave)}" style="min-height:48px">${tile(iconoFila(g.filas[0]), colorFila(g.filas[0]), true)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span></span><span class="hint">${g.n} ${g.n === 1 ? 'vez' : 'veces'}</span><span class="amt" style="width:64px;text-align:right">S/ ${fmtMonto(g.total)}</span></button>`).join('')}</div>`);
   return html;
 }
-const COLORES_MEDIO = ['#7AA7FF', '#B28CFF', '#56C8D8', '#E8C27A', '#D0A8FF', '#A0A8BC', '#F2A65A'];
+const COLORES_MEDIO = ['#5EA2FF', '#FF9440', '#2FD3C2', '#FF8ADF', '#C9A6FF', '#B9DDFF', '#E3C08F'];
 function vistaMedios(k, filas){
   if(!filas.length) return card('<div class="empty">Sin movimientos este mes.</div>');
   const med = agrupar(filas, claveMedio);

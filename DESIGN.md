@@ -18,15 +18,17 @@ colors:
   rosa-chicha: "#FF5C7A"
   naranja-aviso: "#FFA94D"
   cian-info: "#5CE1E6"
-  cat-azul: "#7AA7FF"
-  cat-violeta: "#B28CFF"
-  cat-lavanda: "#D0A8FF"
-  cat-turquesa: "#4FD1C5"
-  cat-cian: "#56C8D8"
-  cat-cielo: "#6CC6FF"
-  cat-arena: "#E8C27A"
-  cat-naranja: "#F2A65A"
-  cat-pizarra: "#A0A8BC"
+  cat-personal-azul: "#5EA2FF"
+  cat-social-naranja: "#FF9440"
+  cat-finanzas-turquesa: "#2FD3C2"
+  cat-terceros-lila: "#E7C9FF"
+  cat-pareja-fucsia: "#FF8ADF"
+  cat-amigos-ambar: "#FFB23E"
+  cat-trabajo-indigo: "#7C7CFF"
+  cat-salud-menta: "#34D6B0"
+  cat-auto-pizarra: "#8E9AB8"
+  cat-inversion-cian: "#9BE7FF"
+  cat-prestamo-lavanda: "#C9A6FF"
 typography:
   cartel-hero:
     fontFamily: "Anton, Arial Narrow, sans-serif"
@@ -142,7 +144,7 @@ It is a working tool opened several times a day on a phone. Density is that of a
 
 ## Colors
 
-A near-black ground with one fluorescent brand green and two fluorescent state colours; categories get their own light, cool-leaning set (blues, violets, teals, sand, orange, slate) that never borrows a state colour.
+A near-black ground with one fluorescent brand green and two fluorescent state colours; categories get their own full-spectrum set where every colour hints at its meaning and siblings are measurably distinct.
 
 ### Primary
 - **Verde 381**: the brand. Primary buttons, current tab, selection, focus ring, the spending line in charts, and the "en camino" / spend-went-down state.
@@ -156,7 +158,13 @@ A near-black ground with one fluorescent brand green and two fluorescent state c
 - **Cian Info**: the "nuevo" merchant tag and the new-merchant alert.
 
 ### Categories
-- **Azul, Violeta, Lavanda, Turquesa, Cian, Cielo, Arena, Naranja, Pizarra** (plus Periwinkle, Ropa magenta-orchid, Oliva and Acero in data.js): data-series and icon colours for cat1/cat2/cat3, the payment-method list and the weekday groups (Lun-Jue azul, Vie-Dom lavanda). Personal is Azul, Social is Violeta.
+Each category colour suggests what it is and is clearly different from its siblings (checked with OKLab distance, including colour-blind simulation; every sibling pair is at least 0.10 apart, 0.045 under deuteranopia/protanopia, and 4.5:1 on Card).
+- **Level 1:** Personal blue, Social orange, Finanzas turquoise, Terceros lilac (Ingresos pale mint).
+- **Personal:** Fijo blue, Variable coral, Salud mint, Auto slate.
+- **Social:** Pareja fuchsia, Amigos amber, Trabajo indigo.
+- **Finanzas:** Inversiones light cyan, Préstamos lavender.
+- **Sub-subcategories** follow the same logic (food in oranges, home and transport in blues, health in mint and teal, gifts and events in pink/violet); see `COLOR_N3` in data.js.
+- **Weekday groups:** Lun-Jue blue, Vie-Dom orange. Payment methods and unknown categories draw from a 12-colour reserve set in the same family.
 
 ### Neutral
 - **381 Ground**: page background and the logo tile.
@@ -168,8 +176,8 @@ A near-black ground with one fluorescent brand green and two fluorescent state c
 
 ### Named Rules
 **The Three Lights Rule.** State is only ever green, yellow or pink, in that meaning. No other colour may say "good" or "bad".
-**The No Borrowed Lights Rule.** Category colours never use pink/red, the 381 green or chicha yellow, so a category can never be misread as a state.
-**The Lift Rule.** Any colour drawn on the ground passes through `paraOscuro()` (HSL lightness at least 64%); never place a raw dark colour on #101014.
+**The Tell Them Apart Rule.** Two categories that can appear side by side (siblings, the stack bar, the donut) must be at least 0.10 apart in OKLab and stay distinguishable under colour-blind simulation. Measure before adding a colour.
+**The No Borrowed Lights Rule.** Category colours stay clear of the exact state colours (OKLab distance at least 0.09 from the 381 green, chicha yellow and chicha pink).
 
 ## Typography
 
@@ -244,7 +252,7 @@ Rises from the bottom on phones (420ms, cubic-bezier(0.32,0.72,0,1); exits in 30
 
 ### Do:
 - **Do** put the state of the month in the band, in its colour, before any explanation.
-- **Do** lift every category colour before using it on the ground (see The Lift Rule).
+- **Do** run `python3 tools/verificar_colores.py dashboard/data.js` after changing any category colour; it must report 0 problems (see The Tell Them Apart Rule).
 - **Do** keep entrance motion to one pass: opacity plus 8px, 320ms cubic-bezier(0.23,1,0.32,1), 40ms stagger, bars growing from their base in 420ms.
 - **Do** honour the global reduced-motion rule; every animation is plain CSS `animation`/`transition` so it switches off.
 - **Do** use drawn SVG icons in one 2px stroke family.

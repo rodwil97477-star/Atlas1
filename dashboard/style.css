@@ -443,7 +443,7 @@ button.row, a.row, .loan.tap, .row-tap-inner{ transition:background-color .15s e
   .tabbar a{ flex-direction:row; justify-content:flex-start; gap:12px; min-height:44px; padding:0 12px; border-radius:10px; font-size:14.5px; }
   @media (hover:hover){ .tabbar a:not([aria-current="page"]):hover{ background:var(--fill); color:var(--label-2); } }
 
-  .wrap{ max-width:720px; margin:0; padding:40px 48px 64px; }
+  .wrap{ flex:1 1 auto; min-width:0; max-width:816px; margin:0; padding:40px 48px 64px; }
   .card{ padding:22px 24px; }
   .cartel{ margin:-22px -24px 4px; padding:18px 24px 16px; }
   .title-row h1{ font-size:52px; }
@@ -466,12 +466,12 @@ button.row, a.row, .loan.tap, .row-tap-inner{ transition:background-color .15s e
   #app > .card{ margin:0; width:100%; }
   #app > .card.wide{ grid-column:1 / -1; }
   .note{ grid-column:1 / -1; }
-  body[data-page="gastos"] #app{ display:flex; }
+  body[data-page="gastos"] #app{ display:flex; align-items:stretch; }
   .vista-cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:20px; align-items:start; margin-top:12px; }
   .vista-cards > .card{ margin:0; width:100%; }
   .vista-cards > .card.wide{ grid-column:1 / -1; }
 
-  body[data-page="ritmo"] #app{ display:flex; }
+  body[data-page="ritmo"] #app{ display:flex; align-items:stretch; }
   #rVista{ display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:20px; align-items:start; margin-top:12px; }
   #rVista > .card{ margin:0; width:100%; }
   #rVista > .card.wide{ grid-column:1 / -1; }
