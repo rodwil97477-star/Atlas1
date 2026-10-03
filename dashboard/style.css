@@ -485,7 +485,7 @@ button.row:active, a.row:active, .loan.tap:active, .row-tap-inner:active{ backgr
 @media (max-width:480px){ .hint-tap{ display:none; } }
 @media (max-width:400px){ .tabbar{ padding:5px; gap:0; } .tabbar a{ font-size:9.5px; letter-spacing:-0.02em; } }
 @media (max-width:340px){ .tabbar{ width:calc(100% - 12px); padding:4px; } .tabbar a{ font-size:8.5px; letter-spacing:-0.03em; } }
-@media (max-width:370px){ .stat3{ gap:6px; } .stat3 .metric{ padding:9px 8px; } .stat3 .mv{ font-size:14px; letter-spacing:-0.03em; } }
+@media (max-width:370px){ .stat3{ gap:6px; } .stat3 .metric{ padding:9px 9px; } .stat3 .ml{ font-size:11px; } .stat3 .mv{ font-size:14px; letter-spacing:-0.03em; } }
 
 /* ============================================================
    Vista de escritorio
