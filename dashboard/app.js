@@ -249,7 +249,7 @@ function curvaSVG(valores, etiquetas, opt){
   }
   const ym = opt.meta ? bot - opt.meta / tope * (bot - top) : null;
   if(opt.meta){
-    s += `<line x1="${x0 - 6}" y1="${ym.toFixed(1)}" x2="${W}" y2="${ym.toFixed(1)}" stroke="${TINTA.alto}" stroke-width="1.2" stroke-dasharray="3 4" opacity="0.75"/>`;
+    s += `<line x1="${x0 - 6}" y1="${ym.toFixed(1)}" x2="${W}" y2="${ym.toFixed(1)}" stroke="var(--label-2)" stroke-width="1" opacity="0.55"/><text x="${W}" y="${(ym - 5).toFixed(1)}" text-anchor="end" font-size="10" font-weight="700" fill="var(--label-3)">meta</text>`;
   }
   if(n > 1){
     s += `<path d="${area}" fill="url(#${id})" class="fi"/>`;
@@ -519,7 +519,7 @@ function htmlPresupuestoGeneral(){
     const prom = previos.length ? previos.reduce((a, m) => a + gastoCat(filasMes(m).filter(esGastoReal), c1, c2), 0) / previos.length : null;
     const ahora = gastoCat(delMes, c1, c2), presu = presus[c2];
     const bajo = presu && prom && presu < prom * 0.85;
-    return `<span class="sub">${prom !== null ? `<span class="${bajo ? 't-justo' : ''}" ${bajo ? 'title="Tu presupuesto está por debajo de lo que sueles gastar aquí"' : ''}>prom. S/ ${fmtMonto(prom)}</span> · ` : ''}hoy S/ ${fmtMonto(ahora)}</span>`;
+    return `<span class="sub">${prom !== null ? `<span class="${bajo ? 't-justo' : ''}" ${bajo ? 'title="Tu presupuesto está por debajo de lo que sueles gastar aquí"' : ''}>prom.&nbsp;S/&nbsp;${fmtMonto(prom)}</span> · ` : ''}hoy&nbsp;S/&nbsp;${fmtMonto(ahora)}</span>`;
   };
   const filas = grupos.map(g1 => `
     <div class="cat-group">
@@ -685,7 +685,7 @@ function abrirListaMes(){
     if(d !== dia){ dia = d; html += `<div class="day-h"><span>${NOMBRE_DIA[r.fecha.getDay()].replace(/^./, c => c.toUpperCase())} ${r.fecha.getDate()} ${MESES_CORTOS[r.fecha.getMonth()].toLowerCase()}</span><span>S/ ${fmtSol(totDia[d])}</span></div>`; }
     html += filaMov(r, { soloHora: true });
   });
-  abrirHoja({ titulo: 'Movimientos de ' + monthLabel(MES), ruta: filas.length + ' en total', html: `<div class="list">${html || '<div class="empty">Sin movimientos.</div>'}</div>`, reabrir: abrirListaMes });
+  abrirHoja({ titulo: 'Movimientos de ' + monthLabel(MES), html: `<p class="hint" style="margin:0">${filas.length} movimiento${filas.length === 1 ? '' : 's'} · S/ ${fmtMonto(suma(filas))} en total</p><div class="list">${html || '<div class="empty">Sin movimientos.</div>'}</div>`, reabrir: abrirListaMes });
 }
 
 /* ============================================================
@@ -723,7 +723,7 @@ function paginaInicio(){
     html += card(`${head('Tendencia · ' + meses.length + ' meses', `<a class="more" href="ritmo.html?mes=${k}">Ver en Ritmo ${chev()}</a>`)}
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:20px;font-weight:700;letter-spacing:-0.02em">S/ ${fmtMonto(total)}</span><span style="font-size:12.5px;font-weight:700" class="${tt.startsWith('sub') ? 't-up' : (tt.startsWith('baj') ? 't-down' : 'muted')}">${tt}</span></div>
       ${curvaSVG(vals, meses.map(monthShort), { meta: leerMeta(), aria: 'Gasto mensual de los últimos meses', tip: meses.map(m => monthLabel(m).replace(/^./, c => c.toUpperCase())) })}
-      <div class="legend"><span><i style="background:${TINTA.accent}"></i>gasto mensual</span><span><i class="dash"></i>tendencia</span>${leerMeta() ? `<span><i class="dash" style="border-color:${TINTA.alto}"></i>meta</span>` : ''}<span class="tap-hint">toca el gráfico para ver cada mes</span></div>`);
+      <div class="legend"><span><i style="background:${TINTA.accent}"></i>gasto mensual</span><span><i class="dash"></i>tendencia</span>${leerMeta() ? `<span><i class="k-meta"></i>meta</span>` : ''}<span class="tap-hint">toca el gráfico para ver cada mes</span></div>`);
   }
 
   const ult = filas.slice().sort((a, b) => b.fecha - a.fecha);
@@ -803,8 +803,8 @@ function htmlMeta(k, total, gasto){
         <div class="fill gx" style="width:${Math.min(total / meta * 100, 100).toFixed(1)}%;background:${col}"></div>
         ${actual ? `<div class="mark fi" style="--i:24;left:${(dias / dm * 100).toFixed(1)}%" title="ritmo ideal: día ${dias} de ${dm}"><i></i></div>` : ''}
       </div>
-      <div class="scale" style="margin-top:8px"><span>${fmtPct(total, meta)} usado</span><span>${actual ? `hoy · día ${dias} de ${dm}` : dm + ' días'}</span><span>S/ ${fmtMonto(meta)}</span></div>
-      ${actual ? `<div class="legend meter-leg"><span><i style="background:${col}"></i>llevas</span>${proy > total ? `<span><i class="k-ghost" style="--c:${col}"></i>cierre a este ritmo: <b>${fmtPct(proy, meta)}</b></span>` : ''}<span><i class="k-mark"></i>ritmo ideal a hoy</span></div>` : ''}
+      <div class="scale" style="margin-top:8px"><span>${fmtPct(total, meta)} usado</span>${actual ? '' : `<span>${dm} días</span>`}<span>S/ ${fmtMonto(meta)}</span></div>
+      ${actual ? `<div class="legend meter-leg"><span><i style="background:${col}"></i>llevas</span>${proy > total ? `<span><i class="k-ghost" style="--c:${col}"></i>cierre: <b>${fmtPct(proy, meta)}</b></span>` : ''}<span><i class="k-mark"></i>ideal hoy (día ${dias})</span></div>` : ''}
     </div>
     ${comp ? `<div class="hint" style="font-size:13px">${comp}</div>` : ''}
     ${desv ? `<div class="flag">${tile(desv.cat, colorDe(desv.cat, 2), true)}<span><b>${escapeHtml(desv.cat)}</b> ${actual ? 'proyecta' : 'cerró en'} S/ ${fmtMonto(desv.proy)} cuando tu promedio es S/ ${fmtMonto(desv.prom)}.</span></div>` : ''}
@@ -956,7 +956,7 @@ function vistaCategorias(k, filas){
       const dt = deltaTxt(g.total, antes);
       const pct = presu ? Math.min(g.total / presu * 100, 100) : (g.total / maxC2 * 100);
       const sobrePresu = presu && g.total >= presu;
-      const barCol = !presu ? col : (sobrePresu ? TINTA.alto : (g.total >= presu * 0.9 ? TINTA.justo : col));
+      const barCol = !presu ? col : (sobrePresu ? TINTA.alto : (g.total >= presu * 0.9 ? TINTA.justo : TINTA.ok));   // v16: con presupuesto, la barra es semáforo
       const sub = presu
         ? `<span class="sub" style="color:${sobrePresu ? TINTA.alto : 'var(--label-3)'};font-weight:${sobrePresu ? 700 : 500}">S/ ${fmtMonto(g.total)} de S/ ${fmtMonto(presu)}</span>`
         : `<span class="sub">${g.n} mov.${dt ? ' · ' + dt : ''}</span>`;
@@ -1001,13 +1001,13 @@ function vistaMedios(k, filas){
   const partes = med.map(g => ({ n: g.clave, v: g.total, color: col(g) }));
   // desglose por tipo; "sin tipo" solo aparece si el medio también tiene débito/crédito (si no, no aporta)
   const desglose = g => { const t = agrupar(g.filas.filter(r => r.tipo), r => r.tipo); if(!t.length) return ''; const sinT = suma(g.filas.filter(r => !r.tipo));
-    return t.map(x => `${escapeHtml(x.clave)} S/ ${fmtMonto(x.total)}`).concat(sinT > 0 ? [`sin tipo S/ ${fmtMonto(sinT)}`] : []).join(' · '); };
+    return t.map(x => `${escapeHtml(x.clave)}&nbsp;S/&nbsp;${fmtMonto(x.total)}`).concat(sinT > 0 ? [`sin tipo&nbsp;S/&nbsp;${fmtMonto(sinT)}`] : []).join(' + '); };
   const credito = filas.filter(r => norm(r.tipo) === 'credito');
   let html = card(`${head('Por medio de pago', `<span class="hint">${med.length} medio${med.length === 1 ? '' : 's'}</span>`)}
     ${stackBar(partes)}
     <div class="list">${med.map(g => {
       const ds = desglose(g);
-      return `<button class="row" data-med="${escapeHtml(g.clave)}" data-col="${col(g)}"><span class="tile" style="background:${alpha(col(g), 0.14)}">${svg('card', 18, col(g))}</span><span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} mov.${ds ? ' · ' + ds : ''}</span></span><span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span><span class="date">${fmtPct(g.total, total)}</span></span>${chev()}</button>`;
+      return `<button class="row" data-med="${escapeHtml(g.clave)}" data-col="${col(g)}"><span class="tile" style="background:${alpha(col(g), 0.14)}">${svg('card', 18, col(g))}</span><span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} mov.</span>${ds ? `<span class="split">${ds}</span>` : ''}</span><span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span><span class="date">${fmtPct(g.total, total)}</span></span>${chev()}</button>`;
     }).join('')}</div>`, 'tight');
   if(credito.length) html += card(`${head('Cargado a tarjeta de crédito')}
     <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="mid">S/ ${fmtMonto(suma(credito))}</span><span class="hint">${credito.length} consumo${credito.length === 1 ? '' : 's'} · ${fmtPct(suma(credito), total)} del mes</span></div>
@@ -1149,7 +1149,7 @@ function vistaRitmoActividad(k){
   const items = orden.map(wd => { const g = GRUPOS_DIA.find(x => x.dias.includes(wd)); return { v: pds[wd], label: NOMBRE_DIA_CORTO[wd], color: g.color, txt: fmtMonto(pds[wd]) }; });
   html += card(`${head('Promedio por día de la semana', `<span class="hint">${monthShort(k)}</span>`)}
     ${barrasV(items, 170, { meta: metaDia })}
-    <div class="legend">${GRUPOS_DIA.map(g => `<span><i style="background:${g.color}"></i>${g.nombre}</span>`).join('')}${metaDia ? `<span><i class="dash" style="border-color:${TINTA.alto}"></i>meta S/ ${fmtMonto(metaDia)}</span>` : ''}</div>`);
+    <div class="legend">${GRUPOS_DIA.map(g => `<span><i style="background:${g.color}"></i>${g.nombre}</span>`).join('')}${metaDia ? `<span><i class="dash dash-meta"></i>meta S/ ${fmtMonto(metaDia)}</span>` : ''}</div>`);
 
   /* hora del día */
   const FR = [['Madrugada', '0-6', 0, 6], ['Mañana', '6-12', 6, 12], ['Mediodía', '12-15', 12, 15], ['Tarde', '15-19', 15, 19], ['Noche', '19-24', 19, 24]];
@@ -1217,7 +1217,7 @@ function ritmoPresupuestoSVG(dm, lim, cumActual, meta, alto){
   const xAt = d => dm > 1 ? x0 + (d - 1) / (dm - 1) * (x1 - x0) : (x0 + x1) / 2;
   const yAt = v => bot - Math.min(v, tope) / tope * (bot - top);
   let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ritmo de gasto contra tu meta">`;
-  if(meta) s += `<line x1="${xAt(1).toFixed(1)}" y1="${yAt(0).toFixed(1)}" x2="${xAt(dm).toFixed(1)}" y2="${yAt(meta).toFixed(1)}" stroke="${TINTA.alto}" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.8" class="fi" style="--i:2"/>`;
+  if(meta) s += `<line x1="${xAt(1).toFixed(1)}" y1="${yAt(0).toFixed(1)}" x2="${xAt(dm).toFixed(1)}" y2="${yAt(meta).toFixed(1)}" stroke="var(--label-3)" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.8" class="fi" style="--i:2"/>`;
   const pts = []; for(let d = 1; d <= lim; d++) pts.push(`${xAt(d).toFixed(1)},${yAt(cumActual[d]).toFixed(1)}`);
   if(pts.length > 1) s += `<path d="M${pts.join(' L')}" fill="none" stroke="${TINTA.accent}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" class="dr"/>`;
   const ux = xAt(lim), uy = yAt(cumActual[lim] || 0);
@@ -1265,7 +1265,7 @@ function vistaRitmoPresupuesto(k){
   const proyeccion = lim ? cum[lim] / lim * dm : cum[dm];
   html += card(`${head('Ritmo del mes', `<span class="hint">${actual ? 'proyectado S/ ' + fmtCorto(proyeccion) : 'cómo cerraste'}</span>`)}
     ${ritmoPresupuestoSVG(dm, lim, cum, meta, 170)}
-    <div class="legend"><span><i style="background:${TINTA.accent}"></i>gasto acumulado</span><span><i class="dash" style="border-color:${TINTA.alto}"></i>ritmo ideal</span>${actual ? `<span><i class="dash dot" style="border-color:${proyeccion > meta ? TINTA.alto : (proyeccion > meta * 0.9 ? TINTA.justo : TINTA.ok)}"></i>a este ritmo</span>` : ''}<span class="tap-hint">toca el gráfico para ver cada día</span></div>
+    <div class="legend"><span><i style="background:${TINTA.accent}"></i>gasto acumulado</span><span><i class="dash dash-meta"></i>ritmo ideal</span>${actual ? `<span><i class="dash dot" style="border-color:${proyeccion > meta ? TINTA.alto : (proyeccion > meta * 0.9 ? TINTA.justo : TINTA.ok)}"></i>a este ritmo</span>` : ''}<span class="tap-hint">toca el gráfico para ver cada día</span></div>
     <p class="insight">${actual
       ? (proyeccion > meta ? `A este ritmo cerrarías en <b>S/ ${fmtMonto(proyeccion)}</b>, S/ ${fmtMonto(proyeccion - meta)} sobre tu meta.` : `A este ritmo cerrarías en <b>S/ ${fmtMonto(proyeccion)}</b>, bajo tu meta.`)
       : (total > meta ? `Cerraste S/ ${fmtMonto(total - meta)} sobre tu meta.` : `Cerraste S/ ${fmtMonto(meta - total)} bajo tu meta.`)}</p>`);
@@ -1282,7 +1282,7 @@ function vistaRitmoPresupuesto(k){
     html += card(`${head('Categorías con presupuesto', '<span class="hint hint-tap">toca para ver el detalle</span>')}${leyendaRitmo(k)}
       <div class="list">${filasCat.map((f, i) => {
         const col = colorDe(f.c2, 2), sobre = f.gastado >= f.presu;
-        const barCol = sobre ? TINTA.alto : (f.gastado >= f.presu * 0.9 ? TINTA.justo : col);
+        const barCol = sobre ? TINTA.alto : (f.gastado >= f.presu * 0.9 ? TINTA.justo : TINTA.ok);
         return `<button class="row" data-abrir-cat2="${escapeHtml(f.c2)}">${tile(f.c2, col)}<span class="main"><span class="name">${escapeHtml(f.c2)}</span><span class="sub" style="color:${sobre ? TINTA.alto : 'var(--label-3)'};font-weight:${sobre ? 700 : 500}">S/ ${fmtMonto(f.gastado)} de S/ ${fmtMonto(f.presu)}</span><span class="track row-track"><span class="gx" style="--i:${i};width:${Math.min(f.pct, 100).toFixed(1)}%;background:${barCol}"></span>${marcaRitmo(k, i)}</span></span><span class="amt" style="min-width:44px;text-align:right">${f.pct.toFixed(0)}%</span>${chev()}</button>`;
       }).join('')}</div>`, 'tight');
   }
@@ -1299,7 +1299,7 @@ function vistaRitmoPresupuesto(k){
     });
     html += card(`${head('Cumplimiento de meta', `<span class="hint">${dentro} de ${meses6.length} mes${meses6.length === 1 ? '' : 'es'}</span>`)}
       ${barrasV(items, 150, { meta })}
-      <div class="legend"><span><i style="background:${TINTA.ok}"></i>bajo la meta</span><span><i style="background:${TINTA.alto}"></i>sobre la meta</span><span><i class="dash" style="border-color:${TINTA.alto}"></i>meta S/ ${fmtCorto(meta)}</span></div>`, 'wide');
+      <div class="legend"><span><i style="background:${TINTA.ok}"></i>bajo la meta</span><span><i style="background:${TINTA.alto}"></i>sobre la meta</span><span><i class="dash dash-meta"></i>meta S/ ${fmtCorto(meta)}</span></div>`, 'wide');
   }
 
   html += `<p class="note">Tu meta es la suma de tus presupuestos por categoría más tu margen. El gasto histórico se compara contra la meta de hoy, no la que tenías configurada en ese momento.</p>`;

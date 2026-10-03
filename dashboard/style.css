@@ -297,7 +297,7 @@ button.row, a.row{ cursor:pointer; }
 .xlabels{ display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:8px; text-align:center; font-size:11px; letter-spacing:-0.01em; color:var(--label-3); font-weight:550; }
 .xlabels .on{ color:var(--label); font-weight:800; }
 .bars-wrap{ position:relative; }
-.goal-line{ position:absolute; left:0; right:0; border-top:1.5px dashed var(--alto); opacity:.7; pointer-events:none; }
+.goal-line{ position:absolute; left:0; right:0; border-top:1.5px dashed var(--label-3); pointer-events:none; }
 .donut-row{ display:flex; align-items:center; gap:18px; }
 .donut{ position:relative; width:132px; height:132px; flex-shrink:0; }
 .donut .c{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
@@ -343,6 +343,10 @@ button.row, a.row{ cursor:pointer; }
 .row .row-track{ position:relative; overflow:visible; }
 .row .row-track > span:first-child{ border-radius:3px; }
 .pace-tick{ position:absolute; top:-3px; bottom:-3px; width:2px; margin-left:-1px; border-radius:1px; background:var(--label); box-shadow:0 0 0 1.5px var(--card); }
+
+.legend i.dash.dash-meta{ border-top-color:var(--label-3); border-top-width:1.6px; }
+.legend i.k-meta{ width:14px; height:0; border-top:1px solid var(--label-2); border-radius:0; opacity:.8; }
+.row .split{ font-size:11.5px; color:var(--label-3); line-height:1.35; margin-top:1px; }
 .legend i.dash.dot{ border-top-style:dotted; border-top-width:2.5px; }
 .legend .tap-hint{ color:var(--label-3); font-size:11.5px; }
 @media (hover:hover) and (pointer:fine){ .legend .tap-hint{ display:none; } }
@@ -351,7 +355,7 @@ button.row, a.row{ cursor:pointer; }
 .donut.hl .seg{ opacity:.18; } .donut.hl .seg.on{ opacity:1; }
 .donut .c span{ max-width:84px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .leg [data-i]{ cursor:pointer; border-radius:8px; margin:0 -8px; padding:6px 8px; transition:background-color .2s ease, opacity .25s ease; }
-.leg.has-sel [data-i]:not(.on){ opacity:.5; }
+.leg.has-sel [data-i]:not(.on){ opacity:.72; }
 .leg [data-i].on{ background:var(--fill); }
 .leg [data-i]:focus-visible{ outline:2px solid var(--accent); outline-offset:0; }
 .tap-hint{ font-size:11.5px; color:var(--label-3); }
