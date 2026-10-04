@@ -97,6 +97,7 @@ function shell(){
       <h1>${tab.nombre}</h1>
       <label class="month"><span class="sr">Mes (aplica a todas las pestañas)</span><select id="mes" disabled><option>...</option></select>${svg('down', 12, 'var(--accent)', 2.2).replace('viewBox="0 0 24 24"', 'viewBox="0 0 12 12"')}</label>
     </div>`;
+  ajustarTitulo();
   $('#tabbar').innerHTML = TABS.map(t => `<a href="${t.href}" data-nav="${t.href}"${t.id === PAGINA ? ' aria-current="page"' : ''}>${svg(t.ic, 22)}<span>${t.nombre}</span></a>`).join('');
   $('#mes').addEventListener('change', e => {
     if(e.target.value === '__todo'){
@@ -109,6 +110,14 @@ function shell(){
     elegirMes(e.target.value);
   });
 }
+/** v18: el título grande se achica solo si no cabe junto al selector de mes (depende de la fuente de cada equipo) */
+function ajustarTitulo(){
+  const h = $('.title-row h1'); if(!h) return;
+  h.style.fontSize = '';
+  let t = parseFloat(getComputedStyle(h).fontSize);
+  while(h.scrollWidth > h.clientWidth + 1 && t > 20){ t -= 1; h.style.fontSize = t + 'px'; }
+}
+addEventListener('resize', () => ajustarTitulo());
 function actualizarLinks(){
   $$('[data-nav]').forEach(a => {
     const base = a.getAttribute('data-nav');
@@ -703,35 +712,123 @@ function abrirListaMes(){
 /* ============================================================
    INICIO
    ============================================================ */
+/* ============================================================
+   INICIO (v18, línea Apple) · ¿cómo voy?
+   Anillo de meta tipo Fitness, listas agrupadas tipo iOS, movimientos estilo Wallet.
+   ============================================================ */
+function anilloMeta(pct, pctProy, pctIdeal, col){
+  // anillo tipo Fitness: pista tenue del mismo color, avance sólido, cierre proyectado tenue
+  // y una rayita en el ritmo ideal de hoy (la misma marca que usa la barra de la versión actual)
+  const R = 46, C = 2 * Math.PI * R, arco = p => (C * Math.max(0, Math.min(p, 1))).toFixed(2);
+  const rad = (pctIdeal * 360 - 90) * Math.PI / 180, cx = Math.cos(rad), cy = Math.sin(rad);
+  const tick = (r1, r2) => `x1="${(60 + r1 * cx).toFixed(2)}" y1="${(60 + r1 * cy).toFixed(2)}" x2="${(60 + r2 * cx).toFixed(2)}" y2="${(60 + r2 * cy).toFixed(2)}"`;
+  return `<svg class="ap-ring" viewBox="0 0 120 120" role="img" aria-label="Llevas ${Math.round(pct * 100)}% de la meta usado${pctIdeal ? `; lo ideal a hoy sería ${Math.round(pctIdeal * 100)}%` : ''}">
+    <circle cx="60" cy="60" r="${R}" fill="none" stroke="${col}" stroke-opacity=".2" stroke-width="12"/>
+    ${pctProy > pct ? `<circle class="ap-ring-proy" cx="60" cy="60" r="${R}" fill="none" stroke="${col}" stroke-opacity=".42" stroke-width="12" stroke-dasharray="${arco(pctProy)} ${C.toFixed(2)}" transform="rotate(-90 60 60)"/>` : ''}
+    <circle class="ap-ring-val" cx="60" cy="60" r="${R}" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${arco(pct)} ${C.toFixed(2)}" transform="rotate(-90 60 60)" style="--c:${C.toFixed(2)}"/>
+    ${pctIdeal > 0 && pctIdeal < 1 ? `<line ${tick(R - 9, R + 9)} stroke="var(--ap-cell)" stroke-width="5" stroke-linecap="round"/><line ${tick(R - 8, R + 8)} stroke="var(--ap-label)" stroke-width="2.4" stroke-linecap="round"/>` : ''}
+    <text x="60" y="60" text-anchor="middle" dominant-baseline="central" class="ap-ring-n">${Math.round(pct * 100)}%</text>
+  </svg>`;
+}
+/** fecha corta tipo Wallet: hora si es hoy, "Ayer", el día de la semana si es de esta semana, si no "19 oct" */
+function fechaCorta(f){
+  const hoy = new Date(), d0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()), d1 = new Date(f.getFullYear(), f.getMonth(), f.getDate());
+  const dias = Math.round((d0 - d1) / 86400000);
+  if(dias === 0) return tieneHora(f) ? horaCorta(f) : 'Hoy';
+  if(dias === 1) return 'Ayer';
+  if(dias < 7) return NOMBRE_DIA[f.getDay()].replace(/^./, c => c.toUpperCase());
+  return f.getDate() + ' ' + MESES_CORTOS[f.getMonth()].toLowerCase();
+}
+/** movimiento estilo Wallet: comercio y monto arriba; categoría y fecha corta abajo, sin cortar texto */
+function apMov(r){
+  const cat = r.cat1 === 'Terceros' ? `Con ${r.cat2}` : (r.cat3 || r.cat2 || r.cat1);
+  return `<div class="ap-mv">${tile(iconoFila(r), colorFila(r))}<span class="ap-mv-b"><span class="ap-mv-l1"><span class="ap-mv-n">${escapeHtml(r.comercio || '(sin comercio)')}</span><span class="ap-mv-a">${montoTxt(r)}</span></span><span class="ap-mv-l2"><span class="ap-mv-c">${escapeHtml(cat)}</span><span class="ap-mv-d">${fechaCorta(r.fecha)}</span></span></span></div>`;
+}
+function apFila(href, ic, color, titulo, sub, extra){
+  const tag = href ? 'a' : 'div';
+  return `<${tag} class="ap-row"${href ? ` href="${href}"` : ''}><span class="ap-ic" style="--c:${color}">${svg(ic, 17, '#fff', 2.2)}</span><span class="ap-main"><span class="ap-t">${titulo}</span>${sub ? `<span class="ap-s">${sub}</span>` : ''}</span>${extra || ''}${href ? chev() : ''}</${tag}>`;
+}
 function paginaInicio(){
   const k = MES, prev = prevKey(k);
   const filas = filasMes(k), gasto = filas.filter(esGastoReal), total = suma(gasto);
   const totalPrev = totalGasto(prev);
   const prev3 = ventana(prev, 3).filter(m => m < k).map(totalGasto).filter(v => v > 0);
   const prom3 = prev3.length ? prev3.reduce((a, b) => a + b, 0) / prev3.length : null;
-  const dias = diaLimite(k), dm = diasDelMes(k), actual = esMesActual(k);
+  const dias = diaLimite(k), dm = diasDelMes(k), actual = esMesActual(k), rest = actual ? dm - dias : 0;
   const cat1 = agrupar(gasto, r => r.cat1).map(g => ({ n: g.clave, v: g.total, color: colorDe(g.clave, 1) }));
+  const meta = leerMeta();
+  const AP = { ok:TINTA.ok, justo:TINTA.justo, alto:TINTA.alto };
+  let html = '';
 
-  // v17: una sola tarjeta principal (antes "Gasto del mes" y "Meta" repetían cuánto llevas)
-  let html = htmlMeta(k, total, gasto, { totalPrev, prom3, cat1, prev, dias, dm, actual });
-
-  const alertas = calcularAlertas(k);
-  if(alertas.length){
-    html += card(`${head('Para tener en cuenta', `<span class="hint">${alertas.length} alerta${alertas.length === 1 ? '' : 's'}</span>`)}
-      <div class="list">${alertas.map((a, i) => `<a class="row fi" style="--i:${i}" href="${a.href}${a.href.includes('?') ? '&' : '?'}mes=${k}">${`<span class="tile" style="background:${alpha(a.color, 0.12)}">${svg(a.ic, 18, a.color)}</span>`}<span class="main"><span class="name" style="white-space:normal">${a.titulo}</span><span class="sub" style="white-space:normal">${a.sub}</span></span>${chev()}</a>`).join('')}</div>`, 'tight');
+  /* tarjeta resumen: estado, total y anillo */
+  if(meta){
+    const ritmo = dias ? total / dias : 0, proy = actual ? ritmo * dm : total, restante = meta - total, porDia = rest > 0 ? restante / rest : 0;
+    const estado = proy > meta ? 'alto' : (proy > meta * 0.9 ? 'justo' : 'ok');
+    const etiqueta = estado === 'ok' ? 'En camino' : estado === 'justo' ? 'Vas justo' : (!actual ? 'Te pasaste' : (restante <= 0 ? 'Ya te pasaste' : 'Vas a pasarte'));
+    const col = AP[estado], ic = estado === 'ok' ? 'check' : (estado === 'justo' ? 'clock' : 'up');
+    const msg = !actual
+      ? (total <= meta ? `Cerraste S/ ${fmtMonto(meta - total)} bajo tu meta.` : `Cerraste S/ ${fmtMonto(total - meta)} sobre tu meta.`)
+      : (restante <= 0 ? `Pasaste tu meta por S/ ${fmtMonto(-restante)}.` : `A este ritmo cierras en S/ ${fmtMonto(proy)}${proy > meta ? `, S/ ${fmtMonto(proy - meta)} sobre tu meta` : ''}.`);
+    const desv = categoriaDesviada(k, gasto, actual && dias ? dm / dias : 1);
+    const ant = actual ? acumuladoHastaDia(prev, dias) : 0;
+    const d = delta(total, totalPrev);
+    html += `<section class="card ap-card ap-hero anim" style="--st:${col}">
+      <div class="ap-hero-top">
+        <div class="ap-hero-txt">
+          <span class="ap-state" style="color:${col}">${svg(ic, 15, col, 2.6)}${etiqueta}</span>
+          <h2 class="sr">Gasto del mes</h2>
+          <div class="ap-amount" id="heroNum">S/ ${fmtMonto(total)}</div>
+          <span class="ap-of">de S/ ${fmtMonto(meta)}${actual ? ` · día ${dias} de ${dm}` : ''}</span>
+        </div>
+        ${anilloMeta(total / meta, proy / meta, actual ? dias / dm : 0, col)}
+      </div>
+      <p class="ap-msg">${msg}</p>
+      ${actual && rest > 0 ? `<div class="ap-pace"><span><b>${restante > 0 ? 'Para no pasarte' : 'Para frenar'}</b><small>${restante > 0 ? `por día, quedan ${rest} día${rest === 1 ? '' : 's'}` : `cierras en S/ ${fmtMonto(total + ritmo / 2 * rest)}`}</small></span><strong>S/ ${fmtMonto(restante > 0 ? porDia : ritmo / 2)}</strong></div>` : ''}
+      <details class="ap-more">
+        <summary><span class="ver">Ver detalle</span><span class="ocultar">Ocultar detalle</span><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG.down}</svg></summary>
+        <div class="ap-more-body">
+          <div class="ap-list">
+            ${actual ? `<div><span>Proyección al cierre<small class="ap-sm">${fmtPct(proy, meta)} de la meta</small></span><b style="color:${col}">S/ ${fmtMonto(proy)}</b></div><div><span>Ideal a hoy<i class="ap-tick" aria-hidden="true" title="la rayita del anillo"></i></span><b>S/ ${fmtMonto(meta * dias / dm)}</b></div>` : `<div><span>Diferencia con la meta</span><b style="color:${col}">${total > meta ? '+' : '−'}S/ ${fmtMonto(Math.abs(total - meta))}</b></div>`}
+            ${d ? `<div><span>vs ${MESES_LARGOS[+prev.split('-')[1] - 1]}</span><b>${d.sube ? '+' : '−'}${d.pct}%</b></div>` : ''}
+            ${ant > 0 ? `<div><span>Al mismo día de ${MESES_LARGOS[+prev.split('-')[1] - 1]}</span><b>S/ ${fmtMonto(ant)}</b></div>` : ''}
+            ${prom3 ? `<div><span>Promedio de 3 meses</span><b>S/ ${fmtMonto(prom3)}</b></div>` : ''}
+            ${dias ? `<div><span>Promedio por día</span><b>S/ ${fmtMonto(total / (actual ? dias : dm))}</b></div>` : ''}
+          </div>
+          ${desv ? `<p class="ap-note"><b>${escapeHtml(desv.cat)}</b> ${actual ? 'proyecta' : 'cerró en'} S/ ${fmtMonto(desv.proy)}; su promedio es S/ ${fmtMonto(desv.prom)}.</p>` : ''}
+          ${cat1.length ? `<div class="ap-split">${stackBar(cat1)}<div class="ap-split-l">${cat1.map(c => `<span><i style="background:${c.color}"></i>${escapeHtml(c.n)}<b>S/ ${fmtMonto(c.v)}</b></span>`).join('')}</div></div>` : ''}
+        </div>
+      </details>
+      <button class="ap-btn" id="metaEdit">Gestionar presupuesto</button>
+    </section>`;
+  } else {
+    html += `<section class="card ap-card ap-hero anim">
+      <h2 class="sr">Gasto del mes</h2>
+      <div class="ap-amount" id="heroNum">S/ ${fmtMonto(total)}</div>
+      <span class="ap-of">${actual ? `día ${dias} de ${dm}` : 'mes cerrado'}</span>
+      <p class="ap-msg">Define cuánto quieres gastar al mes y te aviso cómo vas y cuánto puedes gastar por día.</p>
+      <div class="ap-form"><input id="metaIn" type="number" inputmode="decimal" placeholder="Ej. 2500" aria-label="Meta mensual en soles"><button class="ap-btn solid" id="metaOk">Guardar</button></div>
+      <button class="ap-link" id="metaEdit">o arma tu presupuesto por categoría</button>
+    </section>`;
   }
 
-  const ult = filas.slice().sort((a, b) => b.fecha - a.fecha);
-  html += card(`${head('Últimos movimientos', ult.length > 5 ? `<button class="more" id="verTodos">Ver los ${ult.length} ${chev()}</button>` : '')}
-    <div class="list">${ult.slice(0, 5).map(r => filaMov(r)).join('') || '<div class="empty">Sin movimientos este mes.</div>'}</div>`, 'tight wide c-ult');
+  /* alertas como lista agrupada */
+  const alertas = calcularAlertas(k);
+  if(alertas.length){
+    html += `<section class="ap-sec anim"><h2 class="ap-h">Para tener en cuenta</h2><div class="ap-group">${alertas.map(a => apFila(`${a.href}${a.href.includes('?') ? '&' : '?'}mes=${k}`, a.ic, a.color === TINTA.alto ? AP.alto : (a.color === TINTA.ok ? AP.ok : a.color), a.titulo, a.sub)).join('')}</div></section>`;
+  }
 
-  html += card(`${head('Para ver más')}
-    <div class="atajos">${[
-      ['presupuesto.html', 'target', 'Presupuesto', 'proyección y categorías'],
-      ['gastos.html?vista=dias', 'cal', 'Tus días', 'calendario y horas'],
-      ['compromisos.html', 'repeat', 'Compromisos', 'fijos y préstamos'],
-      ['historial.html', 'resumen', 'Historial', 'tendencia de 6 meses']
-    ].map(([h, ic, t, d]) => `<a class="atajo" data-nav="${h}" href="${h}${h.includes('?') ? '&' : '?'}mes=${k}">${svg(ic, 18, 'var(--accent)')}<b>${t}</b><span>${d}</span></a>`).join('')}</div>`, 'tight c-atajos');
+  /* últimos movimientos estilo Wallet */
+  const ult = filas.slice().sort((a, b) => b.fecha - a.fecha);
+  html += `<section class="ap-sec anim"><div class="ap-h-row"><h2 class="ap-h">Últimos movimientos</h2>${ult.length > 5 ? `<button class="ap-link" id="verTodos">Ver todos</button>` : ''}</div>
+    <div class="ap-group ap-tx">${ult.slice(0, 5).map(apMov).join('') || '<div class="ap-empty">Sin movimientos este mes.</div>'}</div></section>`;
+
+  /* accesos como filas de Ajustes */
+  html += `<section class="ap-sec anim"><h2 class="ap-h">Más</h2><div class="ap-group">
+    ${apFila(`presupuesto.html?mes=${k}`, 'target', '#0A84FF', 'Presupuesto', 'proyección y categorías')}
+    ${apFila(`gastos.html?vista=dias&mes=${k}`, 'cal', '#FF9F0A', 'Tus días', 'calendario y horas')}
+    ${apFila(`compromisos.html?mes=${k}`, 'repeat', '#BF5AF2', 'Compromisos', 'fijos y préstamos')}
+    ${apFila(`historial.html?mes=${k}`, 'resumen', '#64D2FF', 'Historial', 'tendencia de 6 meses')}
+  </div></section>`;
 
   html += `<p class="note">Los montos están en soles con el tipo de cambio del mes de cada movimiento. Inversiones y préstamos (rama Finanzas) y Terceros (la parte de un gasto compartido que te deben) no cuentan como gasto: es plata por cobrar o invertida.</p>`;
   $('#app').innerHTML = html;
@@ -753,82 +850,6 @@ function categoriaDesviada(k, gasto, factor){
     if(proy > prom * 1.35 && proy - prom > 80 && (!peor || proy - prom > peor.exceso)) peor = { cat: g.clave, proy, prom, exceso: proy - prom };
   });
   return peor;
-}
-/** v17: tarjeta principal de Inicio. Junta lo que antes eran "Gasto del mes" y "Meta de gasto":
-    el total con sus comparaciones, el estado de la meta, la proyección y el reparto Personal/Social. */
-function htmlMeta(k, total, gasto, h){
-  const meta = leerMeta();
-  const dm = h.dm, actual = h.actual, dias = h.dias, rest = actual ? dm - dias : 0;
-  const cabeza = `${head('Gasto del mes', `<span class="chip">${actual ? `día ${dias} de ${dm}` : 'mes cerrado'}</span>`)}
-    <div class="big" id="heroNum">S/ ${fmtMonto(total)}</div>
-    <div class="chips">${deltaChip(total, h.totalPrev, 'vs ' + monthShort(h.prev))}</div>`;
-  const extras = `${h.prom3 ? `<span class="chip">prom. 3 meses <b>S/ ${fmtMonto(h.prom3)}</b></span>` : ''}${dias ? `<span class="chip">por día <b>S/ ${fmtMonto(total / (actual ? dias : dm))}</b></span>` : ''}`;
-  const reparto = h.cat1.length ? `<div class="hero-split"><span class="block-label">En qué se fue</span>${stackBar(h.cat1)}<div class="legend">${h.cat1.map(c => `<span><i style="background:${c.color}"></i>${escapeHtml(c.n)} <b>S/ ${fmtMonto(c.v)}</b></span>`).join('')}</div></div>` : '';
-  if(!meta){
-    return card(`${cabeza}${extras ? `<div class="chips">${extras}</div>` : ''}${reparto}
-      <div class="hero-sep"></div>
-      <h2 class="sub-h">Meta de gasto</h2>
-      <p class="msg" style="font-size:14px;color:var(--label-2)">Define cuánto quieres gastar al mes y te aviso cómo vas, cuánto puedes gastar por día y qué categoría se está desviando.</p>
-      <div class="form"><input id="metaIn" type="number" inputmode="decimal" placeholder="Ej. 2500" aria-label="Meta mensual en soles"><button class="btn solid" id="metaOk">Guardar</button></div>
-      <button class="more" id="metaEdit">o arma tu presupuesto por categoría ${chev()}</button>`, 'wide');
-  }
-  const ritmo = dias ? total / dias : 0, proy = actual ? ritmo * dm : total, restante = meta - total, porDia = rest > 0 ? restante / rest : 0;
-  let estado = 'ok', etiqueta = 'En camino';
-  if(proy > meta){
-    estado = 'alto';
-    etiqueta = !actual ? 'Te pasaste' : (restante <= 0 ? 'Ya te pasaste' : 'Vas a pasarte');
-  }
-  else if(proy > meta * 0.9){ estado = 'justo'; etiqueta = 'Vas justo'; }
-  const col = estado === 'ok' ? TINTA.ok : (estado === 'justo' ? TINTA.justo : TINTA.alto);
-  let msg;
-  if(!actual){
-    msg = total <= meta ? `Cerraste ${monthLabel(k)} S/ ${fmtMonto(meta - total)} por debajo de tu meta.` : `Cerraste ${monthLabel(k)} S/ ${fmtMonto(total - meta)} por encima de tu meta.`;
-  } else if(restante <= 0){
-    msg = `Ya pasaste tu meta de S/ ${fmtMonto(meta)} por <b>S/ ${fmtMonto(-restante)}</b>${rest ? `, y aún quedan ${rest} día${rest === 1 ? '' : 's'} del mes` : ''}.`;
-  } else if(estado === 'alto'){
-    msg = `A este ritmo cierras en <b>S/ ${fmtMonto(proy)}</b>, S/ ${fmtMonto(proy - meta)} sobre tu meta.`;
-  } else if(estado === 'justo'){
-    msg = `Cierras cerca de la meta, en unos <b>S/ ${fmtMonto(proy)}</b>.`;
-  } else {
-    msg = `A este ritmo cierras en <b>S/ ${fmtMonto(proy)}</b>, bajo tu meta. Te quedan S/ ${fmtMonto(restante)}.`;
-  }
-  const ideal = meta * dias / dm;
-  const stats = actual
-    ? `<div class="metric"><span class="ml">Proyección</span><span class="mv" style="color:${col}">S/ ${fmtMonto(proy)}</span></div><div class="metric"><span class="ml">Ideal a hoy</span><span class="mv">S/ ${fmtMonto(ideal)}</span></div><div class="metric"><span class="ml">Quedan</span><span class="mv">${rest} día${rest === 1 ? '' : 's'}</span></div>`
-    : `<div class="metric"><span class="ml">Meta</span><span class="mv">S/ ${fmtMonto(meta)}</span></div><div class="metric"><span class="ml">Diferencia</span><span class="mv" style="color:${col}">${total > meta ? '+' : '−'}S/ ${fmtMonto(Math.abs(total - meta))}</span></div><div class="metric"><span class="ml">Por día</span><span class="mv">S/ ${fmtMonto(total / dm)}</span></div>`;
-  let comp = '';
-  if(actual){ const ant = acumuladoHastaDia(h.prev, dias); if(ant > 0) comp = `Al mismo día de ${MESES_LARGOS[+h.prev.split('-')[1] - 1]} llevabas S/ ${fmtMonto(ant)}.`; }
-  const desv = categoriaDesviada(k, gasto, actual && dias ? dm / dias : 1);
-  let pace = '';
-  if(actual && rest > 0){
-    pace = restante > 0
-      ? `<div class="pace st-${estado}"><div class="pace-t"><div class="pt">Para no pasarte</div><div class="ps">gasta como máximo esto por día los ${rest} día${rest === 1 ? '' : 's'} que quedan</div></div><div class="pace-n"><b>S/ ${fmtMonto(porDia)}</b><span>por día</span></div></div>`
-      : `<div class="pace st-${estado}"><div class="pace-t"><div class="pt">Para frenar</div><div class="ps">si desde hoy gastas la mitad de tu ritmo, cierras en S/ ${fmtMonto(total + ritmo / 2 * rest)}</div></div><div class="pace-n"><b>S/ ${fmtMonto(ritmo / 2)}</b><span>por día</span></div></div>`;
-  }
-  return card(`
-    <div class="cartel st-${estado}"><b><i aria-hidden="true"></i>${etiqueta}</b><span>Meta S/ ${fmtMonto(meta)}</span></div>
-    ${cabeza}
-    <h2 class="sr">Meta de gasto</h2>
-    <p class="msg">${msg}</p>
-    <div>
-      <div class="meter meter-meta" role="img" aria-label="Llevas ${fmtPct(total, meta)} de la meta${actual ? `; a este ritmo cierras en ${fmtPct(proy, meta)}; el ritmo ideal a hoy es ${fmtPct(dias, dm)}` : ''}">
-        ${actual && proy > total ? `<div class="ghost gx" style="width:${Math.min(proy / meta * 100, 100).toFixed(1)}%;--c:${col}"></div>` : ''}
-        <div class="fill gx" style="width:${Math.min(total / meta * 100, 100).toFixed(1)}%;background:${col}"></div>
-        ${actual ? `<div class="mark fi" style="--i:24;left:${(dias / dm * 100).toFixed(1)}%" title="ritmo ideal: día ${dias} de ${dm}"><i></i></div>` : ''}
-      </div>
-      <div class="scale" style="margin-top:8px"><span>${fmtPct(total, meta)} usado</span>${actual ? '' : `<span>${dm} días</span>`}<span>S/ ${fmtMonto(meta)}</span></div>
-    </div>
-    ${pace}
-    <details class="mas"><summary><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG.chev}</svg><span class="ver">Ver detalle</span><span class="ocultar">Ocultar detalle</span></summary>
-      <div class="mas-body">
-        ${actual ? `<div class="legend meter-leg"><span><i style="background:${col}"></i>llevas</span>${proy > total ? `<span><i class="k-ghost" style="--c:${col}"></i>cierre: <b>${fmtPct(proy, meta)}</b></span>` : ''}<span><i class="k-mark"></i>ideal hoy (día ${dias})</span></div>` : ''}
-        <div class="stat3">${stats}</div>
-        ${extras || comp ? `<div class="chips">${extras}${comp ? `<span class="chip">${comp}</span>` : ''}</div>` : ''}
-        ${desv ? `<div class="flag">${tile(desv.cat, colorDe(desv.cat, 2), true)}<span><b>${escapeHtml(desv.cat)}</b> ${actual ? 'proyecta' : 'cerró en'} S/ ${fmtMonto(desv.proy)} cuando tu promedio es S/ ${fmtMonto(desv.prom)}.</span></div>` : ''}
-        ${reparto}
-      </div>
-    </details>
-    <div class="hero-acc"><button class="btn" id="metaEdit">${svg('pencil', 15)}Gestionar presupuesto</button></div>`, 'wide');
 }
 function enlazarMeta(k, total, gasto){
   const guardar = () => {
@@ -1252,7 +1273,7 @@ function htmlPresupuesto(k){
   const col = estado === 'ok' ? TINTA.ok : (estado === 'justo' ? TINTA.justo : TINTA.alto);
   const queda = meta - total, porDiaResto = rest > 0 && queda > 0 ? queda / rest : 0;
 
-  let html = card(`<div class="cartel st-${estado}"><b><i aria-hidden="true"></i>${etiqueta}</b><span>${actual ? `día ${lim} de ${dm}` : 'mes cerrado'}</span></div>
+  let html = card(`<div class="cartel st-${estado}"><b>${svg(estado === 'ok' ? 'check' : (estado === 'justo' ? 'clock' : 'up'), 15, 'currentColor', 2.6)}${etiqueta}</b><span>${actual ? `día ${lim} de ${dm}` : 'mes cerrado'}</span></div>
     ${head('Gastado del presupuesto')}
     <div class="big" id="presuHeroNum" data-v="${total}">S/ ${fmtMonto(total)}</div>
     <div class="chips"><span class="chip">de S/ ${fmtMonto(meta)}</span><span class="chip">${fmtPct(total, meta)} usado</span>${actual ? `<span class="chip" style="color:${col}">cierre ~S/ ${fmtMonto(proy)}</span>` : ''}</div>
@@ -1611,8 +1632,7 @@ function paginaHistorial(){
 /* ============================================================
    Arranque
    ============================================================ */
-/* piloto.html (body.apple) dibuja Inicio con la línea gráfica Apple de piloto-apple.js */
-const PAGINAS = { inicio: document.body.classList.contains('apple') && typeof paginaInicioApple === 'function' ? paginaInicioApple : paginaInicio, presupuesto: paginaPresupuesto, gastos: paginaGastos, compromisos: paginaCompromisos, historial: paginaHistorial };
+const PAGINAS = { inicio: paginaInicio, presupuesto: paginaPresupuesto, gastos: paginaGastos, compromisos: paginaCompromisos, historial: paginaHistorial };
 /* v13: un monto nunca se parte en dos líneas ("S/" arriba y "2,062" abajo): el espacio después de
    S/ o $ se vuelve no separable en todo lo que se dibuja (pestañas, hojas, contadores). */
 const RE_MONEDA = /(S\/|\$) (?=[-\d])/g;

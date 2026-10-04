@@ -1,9 +1,8 @@
-const CACHE = 'finanzas-shell-v14';
+const CACHE = 'finanzas-shell-v16';
 const SHELL = [
   'index.html', 'presupuesto.html', 'gastos.html', 'compromisos.html', 'historial.html', 'ritmo.html', 'resumen.html', 'explorar.html',
   'style.css', 'data.js', 'app.js', 'manifest.json',
-  'icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png',
-  'fonts/anton-latin.woff2'
+  'icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png'
 ];
 
 self.addEventListener('install', e => {

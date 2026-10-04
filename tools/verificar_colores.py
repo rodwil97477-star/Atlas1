@@ -19,7 +19,7 @@ def de(a,b,k=None):
     p,q=oklab(A),oklab(B); return sum((x-y)**2 for x,y in zip(p,q))**0.5
 def lum(h): r,g,b=[lin(x) for x in rgb(h)]; return 0.2126*r+0.7152*g+0.0722*b
 def contrast(a,b): x,y=sorted([lum(a),lum(b)]); return (y+0.05)/(x+0.05)
-ESTADOS={'acento celeste':'#5AC8FA','verde (vas bien)':'#7CFA9E','amarillo (vas justo)':'#FFD84D','rojo (te pasaste)':'#FF5A5F'}
+ESTADOS={'acento celeste':'#5AC8FA','verde (vas bien)':'#30D158','amarillo (vas justo)':'#FFD60A','rojo (te pasaste)':'#FF453A'}
 def informe(N1,N2,N3,grupos2,grupos3,umbral=0.10,umbral_cb=0.06):
     malos=[]
     def chk(nombre,conj):
@@ -33,7 +33,7 @@ def informe(N1,N2,N3,grupos2,grupos3,umbral=0.10,umbral_cb=0.06):
     for n,c in todos.items():
         for en,ec in ESTADOS.items():
             if de(c,ec)<0.09: malos.append(f"choca con estado {en}: {n} {c} ΔE={de(c,ec):.3f}")
-        if contrast(c,'#18181D')<4.5: malos.append(f"poco contraste sobre tarjeta: {n} {c} {contrast(c,'#18181D'):.2f}:1")
+        if contrast(c,'#1C1C1E')<4.5: malos.append(f"poco contraste sobre tarjeta: {n} {c} {contrast(c,'#1C1C1E'):.2f}:1")
     return malos
 G2={'personal':['fijo','variable','salud y bienestar','auto y movilidad'],'social':['pareja','amigos','trabajo'],'finanzas':['inversiones y ahorro','prestamos']}
 G3={'fijo':['vivienda','servicios','suscripciones','seguros','educacion'],

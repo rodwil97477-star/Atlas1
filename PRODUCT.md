@@ -29,7 +29,7 @@ Built around his own categorisation tree (cat1 > cat2 > cat3), his bot, and his 
 ## Capabilities and Constraints
 
 - Static site: HTML + CSS + vanilla JS, no build step, deployed on Netlify; service worker caches the shell.
-- No external libraries or fonts today; all charts are hand-drawn SVG/CSS.
+- No external libraries or downloaded fonts (system type only since v18); all charts are hand-drawn SVG/CSS.
 - Must keep every function, calculation, data field, storage key and copy meaning. Layout order inside a tab may change; features may not be removed.
 - Global rule: `@media (prefers-reduced-motion: reduce)` disables animations.
 
@@ -37,7 +37,8 @@ Built around his own categorisation tree (cat1 > cat2 > cat3), his bot, and his 
 
 - Personal brand "381": bold pixel numerals (6x10 cells, 2-cell stroke, clipped corners) in a true -12 degree italic, green `#7CFA9E` gradient on near-black `#101014`, with pixel breeze gusts in celeste passing behind (bright head, fading tail). Redesigned 2026-10 from the original dot-matrix mark; the user asked to keep it pixel. Animated logo lives in the header (34x34, radius 10) and on the gate; icons are generated from the same geometry (`tools/logo381.py`).
 - Confirmed by the user (2026-10-03): the whole app adopts the 381 identity, dark-only.
-- User preference (2026-10): favourite colour is blue; the interface accent is a light sky blue (celeste). Green, yellow and red are reserved for the on-pace / tight / over traffic light. The logo keeps its green.
+- User decision (2026-10, v18): the whole app moves to an Apple-native visual line (iOS Health / Fitness / Wallet patterns, system type, iOS system colours for the traffic light), keeping the 381 pixel logo and the celeste accent. Detail care is the explicit quality bar: centred figures, symmetric separators, no truncation.
+- User preference (2026-10): favourite colour is blue; the interface accent is a light sky blue (celeste). Green, yellow and red (iOS system colours since v18) are reserved for the on-pace / tight / over traffic light. The logo keeps its green.
 - User preference (2026-10): keeps the original (v13) animations and their slower timings, including live details such as the pinging newest chart point.
 
 ## Evidence on Hand

@@ -237,7 +237,8 @@ const COLOR_N3 = {
 };
 /* v15: el celeste es el color de la interfaz (selección, acciones, gráficos). Verde, amarillo y rojo
    son solo semáforo: dicen cómo vas, nunca decoran. */
-const TINTA = { accent:'#5AC8FA', ok:'#7CFA9E', justo:'#FFD84D', alto:'#FF5A5F', warn:'#FFA94D', info:'#5AC8FA', neutro:'#6B6E7A' };
+/* v18: el semáforo usa los colores de sistema de iOS (verde, amarillo, rojo, naranja) */
+const TINTA = { accent:'#5AC8FA', ok:'#30D158', justo:'#FFD60A', alto:'#FF453A', warn:'#FF9F0A', info:'#5AC8FA', neutro:'#6B6E7A' };
 const PALETA_RESERVA = ['#5EA2FF','#FF9440','#2FD3C2','#FF8ADF','#C9A6FF','#E3C08F','#7C7CFF','#9BE7D8','#FF7D45','#8E9AB8','#F7A6F0','#B9DDFF'];
 function _hash(t, n){ let h = 0; for(let i=0;i<t.length;i++) h = (h*31 + t.charCodeAt(i)) >>> 0; return h % n; }
 function colorDe(nombre, nivel){

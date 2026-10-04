@@ -1,23 +1,23 @@
 ---
 name: Finanzas 381
-description: Dark, poster-voiced personal finance dashboard in the 381 brand
+description: Dark personal finance dashboard in an Apple-native line (iOS Health, Fitness, Wallet) with the 381 brand
 colors:
-  ground-381: "#101014"
-  rail: "#0B0B0E"
-  card: "#18181D"
-  sunken: "#202027"
-  raised: "#2A2A33"
-  label: "#EEEFF2"
-  label-2: "#BABCC5"
-  label-3: "#8D8F9A"
-  label-4: "#5D5F6A"
+  ground: "#050506"
+  rail: "#0A0A0B"
+  card: "#1C1C1E"
+  sunken: "#2C2C2E"
+  raised: "#3A3A3C"
+  label: "#F5F5F7"
+  label-2: "#C7C7CC"
+  label-3: "#8E8E93"
+  label-4: "#545458"
   celeste: "#5AC8FA"
   celeste-hover: "#7DD3FC"
   celeste-ink: "#03263B"
-  verde-ok: "#7CFA9E"
-  amarillo-justo: "#FFD84D"
-  rojo-alto: "#FF5A5F"
-  naranja-aviso: "#FFA94D"
+  verde-ok: "#30D158"
+  amarillo-justo: "#FFD60A"
+  rojo-alto: "#FF453A"
+  naranja-aviso: "#FF9F0A"
   verde-logo-381: "#7CFA9E"
   cat-personal-azul: "#5EA2FF"
   cat-social-naranja: "#FF9440"
@@ -31,24 +31,18 @@ colors:
   cat-inversion-cian: "#9BE7FF"
   cat-prestamo-lavanda: "#C9A6FF"
 typography:
-  cartel-hero:
-    fontFamily: "Anton, Arial Narrow, sans-serif"
-    fontSize: "clamp(56px, 17vw, 76px)"
-    fontWeight: 400
-    lineHeight: 0.92
-    letterSpacing: "0.005em"
-  cartel-title:
-    fontFamily: "Anton, Arial Narrow, sans-serif"
-    fontSize: "clamp(32px, 10vw, 44px)"
-    fontWeight: 400
-    lineHeight: 0.95
-    letterSpacing: "0.01em"
-  cartel-band:
-    fontFamily: "Anton, Arial Narrow, sans-serif"
-    fontSize: "38px"
-    fontWeight: 400
-    lineHeight: 0.9
-    letterSpacing: "0.01em"
+  large-title:
+    fontFamily: "-apple-system, SF Pro Display, system-ui, sans-serif"
+    fontSize: "34px (auto-fits down to 20px next to the month selector)"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "-0.02em"
+  hero-figure:
+    fontFamily: "ui-rounded, SF Pro Rounded, -apple-system, system-ui, sans-serif"
+    fontSize: "clamp(40px, 12vw, 48px); 44px on the Inicio summary"
+    fontWeight: 700
+    lineHeight: 1.05
+    letterSpacing: "-0.025em"
   title:
     fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, system-ui, sans-serif"
     fontSize: "15px"
@@ -130,22 +124,22 @@ components:
 
 ## Overview
 
-**Creative North Star: "El Cartel 381"**
+**Creative North Star: "Native, then ours"**
 
-The dashboard reads the month the way a Lima chicha poster reads a concert: one loud, fluorescent band says where you stand, and everything around it stays calm and legible. The ground is the near-black of the 381 logo tile; the interface speaks in a light sky blue (celeste), the owner's favourite colour, so that green, yellow and red are free to mean only one thing: how the month is going. Loudness is rationed to the things that need a decision: the month total, the state of the budget, and figures that crossed a line.
+Since v18 (2026-10) the app speaks the visual language its owner lives in every day on his iPhone: iOS Health, Fitness and Wallet. Large titles, grouped surfaces with continuous corners, the system type (SF Pro Display for titles, SF Pro Rounded for figures), Settings-style coloured icons and the iOS system colours for the traffic light. The 381 brand stays in the pixel logo and the celeste accent. The quality bar is detail: every figure sits on a tabular grid and is optically centred, separators run with equal margins on both sides, text never truncates, and nothing collides from 320px up (checked by an automated defect scanner on every tab).
 
-It is a working tool opened several times a day on a phone. Density is that of a daily app (cards of 18px padding, 12px gaps), rows and labels use the platform's own sans for speed, and only headline figures, tab titles and the state band switch to the condensed poster face. Motion is unhurried and alive: cards float up with a soft blur, bars grow, chart dots pop in, and small live details keep breathing (the newest point of a chart pings, today's calendar day glows, the "en vivo" dot beats). Every loop is built on transform and opacity so it costs almost no battery.
+It is a working tool opened several times a day on a phone. Motion is unhurried: the Meta ring draws once on entry, cards rise softly, "Ver detalle" expands with an ease-out, rows and buttons give press feedback. Loops use transform and opacity only.
 
 **Key Characteristics:**
-- Dark only, on the 381 ground (#101014), with tonal layers instead of shadows.
-- One interface accent, celeste; the 381 green lives on in the logo and as the "on pace" light.
-- A three-light state vocabulary: green on pace, yellow tight, red over.
-- Poster numerals (Anton) for the few numbers that matter most; system sans for everything you read in a list.
-- Unhurried motion with live details, tuned to the owner's taste (v13 timings), never repainting in a loop.
+- Dark only, on a near-black ground (#050506) with #1C1C1E grouped surfaces; no shadows except on floating material (tab bar, sheet).
+- One interface accent, celeste; green/yellow/red (iOS system colours) mean on pace, tight and over.
+- Fitness-style Meta ring on Inicio: used share, projected close and a tick for today's ideal pace; the percentage alone in the centre.
+- State as coloured text with its icon (Health style), not a poster band.
+- System type throughout: SF Pro Display titles, SF Pro Rounded figures, SF Pro Text for reading.
 
 ## Colors
 
-A near-black ground with one celeste interface accent and a green/yellow/red traffic light; categories get their own full-spectrum set where every colour hints at its meaning and siblings are measurably distinct.
+A near-black ground with #1C1C1E grouped surfaces, one celeste interface accent and the iOS green/yellow/red traffic light; categories get their own full-spectrum set where every colour hints at its meaning and siblings are measurably distinct.
 
 ### Primary
 - **Celeste**: the interface. Primary and soft buttons, current tab, selection, focus ring, links, the spending line and calendar heat, the "nuevo" tag, today's ring in the calendar.
@@ -170,7 +164,7 @@ Each category colour suggests what it is and is clearly different from its sibli
 - **Weekday groups:** Lun-Jue blue, Vie-Dom orange. Payment methods and unknown categories draw from a 12-colour reserve set in the same family.
 
 ### Neutral
-- **381 Ground**: page background and the logo tile.
+- **Ground**: page background (#050506).
 - **Rail**: desktop side navigation, a step darker than the ground.
 - **Card**: every card surface.
 - **Sunken**: metric tiles, inputs, segmented-control track, chips, inner blocks.
@@ -184,24 +178,20 @@ Each category colour suggests what it is and is clearly different from its sibli
 
 ## Typography
 
-**Display Font:** Anton (self-hosted, `fonts/anton-latin.woff2`, with Arial Narrow fallback)
-**Body Font:** the system UI sans (SF Pro on Apple, Segoe UI on Windows)
-
-**Character:** A condensed poster face shouting a few numbers, over a quiet native sans that does all the reading. All figures use tabular numerals.
+**Titles:** SF Pro Display (system stack). **Figures:** SF Pro Rounded (`ui-rounded`), tabular numerals. **Reading:** SF Pro Text. On non-Apple devices the platform UI sans stands in. No web fonts are downloaded.
 
 ### Hierarchy
-- **Cartel hero** (Anton 400, clamp(56px, 17vw, 76px), line-height 0.92): the month total, the budget total, sheet totals; 48 to 60px variant inside sheets; 40px for secondary figures (loans receivable, day value 46px).
-- **Cartel title** (Anton 400, clamp(32px, 10vw, 44px), uppercase): the tab title next to the month selector; 52px on desktop.
-- **Cartel band** (Anton 400, 38px, uppercase): the state word inside the state band only.
-- **Cartel figure** (Anton 400, 34px, in the state colour): the daily cap in "Para no pasarte" / "Para frenar".
-- **Sheet title** (Anton 400, 30px, uppercase): the title of every detail sheet.
-- **Title** (650, 15px): card headings, in sentence case.
-- **Body** (500, 15px, 1.5): explanatory sentences inside cards, max 62ch.
-- **Row** (600, 14.5px): list item names and amounts (700).
-- **Label** (550, 12px): metric labels, captions, axis labels.
+- **Large title** (700, 34px, -0.02em): the tab title; shrinks automatically (to 20px minimum) when it would touch the month selector.
+- **Hero figure** (Rounded 700, 40 to 48px): the month total, budget total, sheet totals. **Secondary figure** (Rounded 700, 30px). **Daily cap** (Rounded 700, 28px).
+- **Ring percentage** (Rounded 700, 25px, centred with `dominant-baseline: central`).
+- **Card title** (650, 17px) with its supporting fact on a second line in Label-3 (13px), Health style; links ("Ver todos") stay on the right.
+- **Section header outside a group** (Display 700, 22px) on Inicio's grouped lists.
+- **Row** (500, 16px) with sub-line 13px; names wrap to two lines instead of truncating. Amounts Rounded 600, 16px.
+- **Small text** keeps neutral tracking; negative tracking only at 17px and above.
 
 ### Named Rules
-**The Few Loud Numbers Rule.** Anton is reserved for tab and sheet titles, at most one hero figure per card, the daily cap and the state band. Rows, chips, metrics, buttons and labels always use the system sans.
+**The No Truncation Rule.** Names and labels never end in an ellipsis on screens 320px and up; they wrap, or the layout gives them room.
+**The Centred Figure Rule.** A figure inside a shape (ring, donut) is the only thing in it and is optically centred; supporting words go outside.
 **The No Eyebrow Rule.** Card headings are real headings in sentence case; there are no small uppercase tracked labels above them.
 
 ## Layout
@@ -210,7 +200,7 @@ Single column on phones (max 560px, 16px side gutters, 12px between cards, botto
 
 ## Elevation & Depth
 
-Flat and tonal. Depth comes from stepping surfaces (ground, card, sunken, raised) plus a 1px top highlight on cards (`inset 0 1px 0 rgba(255,255,255,0.05)`). Real shadows exist only on things that float above the page: the mobile tab bar (`0 12px 32px rgba(0,0,0,0.55)` plus a 1px light outline) and the detail sheet.
+Flat and tonal, like iOS grouped lists: depth comes from stepping surfaces (ground, card, sunken, raised) with no card outlines. Translucent material (`backdrop-filter: blur(24px) saturate(180%)`, solid fallback under reduced transparency) and a real shadow exist only on what floats: the tab bar and the detail sheet. Separators are 1px `rgba(84,84,88,.55)` and always run with equal margins on both sides of their group.
 
 ### Named Rules
 **The Float-Only Shadow Rule.** A shadow means "this is above the page" (tab bar, sheet). Cards never carry a drop shadow.
@@ -246,7 +236,7 @@ Softly squared. Cards 18px, inner blocks and inputs 12px, small buttons and cale
 - **Desktop:** sticky side rail on the darker Rail colour, icon and label in a row, hover lifts to a faint fill.
 
 ### State Band (signature)
-The top of the Meta card (Inicio) and the Presupuesto card (Ritmo) is a full-width band in the state colour with the state word in Anton uppercase (a pulsing dot precedes it when over budget) and the reference (Meta or day of month) in small dark text. Smaller contexts (the per-category budget inside a sheet) use the compact state tag: the same colour as a 6px-corner uppercase tag.
+Since v18 the month's state is coloured text with its icon (trend-up when over, clock when tight, check on pace) at the top of the Inicio summary and the Presupuesto card, with the reference (day of month) in Label-3 on the right. Smaller contexts (the per-category budget inside a sheet) use a pill tinted in the state colour.
 
 ### Detail Sheet
 Rises from the bottom on phones (550ms, cubic-bezier(0.32,0.72,0,1)), drag to dismiss; on desktop it is a centred window that fades and scales from 0.96 in 350ms.
@@ -258,7 +248,7 @@ Tabler Icons (MIT), outline, 2px stroke on a 24px grid, copied as paths into dat
 - Colour on a change only when it matters: deltas under 15% are grey; red and green are kept for real moves and for the traffic light.
 - Neutral facts are plain grey text, not pills; pills are only for coloured changes.
 - Metrics are rows divided by hairlines, never boxes inside a card.
-- The state band ("VAS A PASARTE") is a slim strip (27px Anton) on top of its card.
+- The state is coloured text with an icon, not a band.
 - Inicio shows only state, total, meter and "Para no pasarte"; the rest sits behind "Ver detalle".
 - Usage hints ("toca para…") show for the first three visits; page footnotes sit behind "Cómo se calcula".
 
@@ -266,7 +256,7 @@ Tabler Icons (MIT), outline, 2px stroke on a 24px grid, copied as paths into dat
 Pixel mark: solid 6x10-cell numerals (2-cell stroke, clipped corners, 7/200 cell) in a true italic `skewX(-12)`, logo green gradient, on a ground-coloured halo. Behind them run three currents of pixel breeze gusts: each gust is nine cells that step up or down one row halfway, from a faint celeste tail to a pale-cyan head. In the header (34px) and the gate (56px) each current is its own layer that slides exactly one gust period on a slow linear loop (6.5 to 9.5s, with a gentle opacity breath); numerals never move. Only transform and opacity are animated, so the global reduced-motion rule freezes it on the same pose as the static icon. Geometry lives in `tools/logo381.py`; never redraw it by hand.
 
 ### Historial (fifth tab, formerly Resumen)
-The last six months, now also holding the single trend chart (curve, Meta line and a pill per month marked within/over the Meta): period total in Anton with six metric tiles, a months-by-category heat map (intensity = that category's own highest month; on phones the name sits above its row), "Qué cambió" with diverging bars (red right for increases, green left for decreases, same days of the previous month while a month is in progress) and the period's merchants.
+The last six months, now also holding the single trend chart (curve, Meta line and a pill per month marked within/over the Meta): period total in SF Pro Rounded with six metrics, a months-by-category heat map (intensity = that category's own highest month; on phones the name sits above its row), "Qué cambió" with diverging bars (red right for increases, green left for decreases, same days of the previous month while a month is in progress) and the period's merchants.
 
 ### Data details (v16)
 Small pieces that add information, each with its own motion:
@@ -294,6 +284,6 @@ Small pieces that add information, each with its own motion:
 
 ### Don't:
 - **Don't** use green, yellow or red for anything that is not a state (see The Three Lights Rule).
-- **Don't** set rows, chips, metrics or buttons in Anton.
+- **Don't** truncate a name with an ellipsis or put a second word inside the Meta ring.
 - **Don't** speed motion up below the v13 timings; the owner prefers the slower feel.
 - **Don't** reintroduce a light theme, the old violet accent, or green as the interface colour.
