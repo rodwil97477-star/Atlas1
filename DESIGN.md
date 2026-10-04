@@ -158,7 +158,7 @@ A near-black ground with one celeste interface accent and a green/yellow/red tra
 
 ### Tertiary
 - **Naranja Aviso**: pending fixed charges and the ant-spending alert.
-- **Verde logo 381**: only inside the 381 logo mark.
+- **Verde logo 381**: only inside the 381 logo mark (numerals as a #A8FFC4 to #5FEA89 vertical gradient around it).
 
 ### Categories
 Each category colour suggests what it is and is clearly different from its siblings (checked with OKLab distance, including colour-blind simulation; every sibling pair is at least 0.10 apart, 0.045 under deuteranopia/protanopia, and 4.5:1 on Card).
@@ -253,6 +253,9 @@ Rises from the bottom on phones (550ms, cubic-bezier(0.32,0.72,0,1)), drag to di
 
 ### Icons
 Tabler Icons (MIT), outline, 2px stroke on a 24px grid, copied as paths into data.js (no runtime dependency). Each category has its own pictogram (basket for groceries, gas pump for fuel, piggy bank for savings...); navigation uses the same family.
+
+### Logo 381
+Continuous-stroke numerals (rounded corners, 13/200 stroke, true italic `skewX(-12)`) in the logo green, sitting on a ground-coloured halo, with three celeste breeze currents passing behind them and fading out at both sides. In the header (34px) and the gate (56px) each current is its own layer that slides exactly one wave period on a slow linear loop (7.5 to 11s, with a gentle opacity breath); numerals never move. Only transform and opacity are animated, so the global reduced-motion rule freezes it on the same pose as the static icon. Geometry lives in `tools/logo381.py`; never redraw it by hand.
 
 ### Resumen (fifth tab)
 The last six months: period total in Anton with six metric tiles, a months-by-category heat map (intensity = that category's own highest month; on phones the name sits above its row), "Qué cambió" with diverging bars (red right for increases, green left for decreases, same days of the previous month while a month is in progress) and the period's merchants.

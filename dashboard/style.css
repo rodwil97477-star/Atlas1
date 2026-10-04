@@ -74,27 +74,32 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .top{ display:flex; flex-direction:column; gap:18px; padding:2px 2px 0; view-transition-name: cabecera; }
 .brand{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .brand-l{ display:flex; align-items:center; gap:10px; min-width:0; }
-/* Logo 381: número estático + 16 rayitas de estela animadas solo con CSS `animation`
-   (transform + opacity => compositor, sin repaint, sin JS). La regla global de
-   prefers-reduced-motion (animation:none !important) las congela en su pose base. */
+/* Logo 381 (v2): números quietos y tres corrientes de brisa que pasan por detrás.
+   Cada onda es una capa 1.5x más ancha que el tile y se desplaza exactamente un periodo
+   (33.333% de su ancho), así el bucle no tiene costura. Solo CSS `animation` sobre
+   transform + opacity: compositor, sin JS. La regla global de prefers-reduced-motion
+   las congela en su pose base, que es idéntica al ícono estático. */
 .logo381{
-  --logo381-bg:#101014; --logo381-fg:#7CFA9E;
+  --logo381-bg:#101014;
   position:relative; flex:none; width:34px; height:34px; border-radius:10px;
-  background:var(--logo381-bg); box-shadow:inset 0 0 0 1px rgba(124,250,158,0.16);
+  background:var(--logo381-bg); box-shadow:inset 0 0 0 1px rgba(90,200,250,0.14);
   overflow:hidden; isolation:isolate; contain:strict;
 }
-.logo381__trail{ position:absolute; inset:0; }
-.logo381__trail > span{
-  position:absolute; left:var(--x); top:var(--y); width:var(--w); height:var(--h);
-  background:var(--logo381-fg); opacity:var(--o); transform:rotate(var(--r));
-  animation:logo381-drift var(--t) ease-in-out var(--dl) infinite;
-  will-change:transform,opacity;
+.logo381__brisa{
+  position:absolute; inset:0;
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+          mask-image:linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
 }
-@keyframes logo381-drift{
-  0%,100%{ transform:rotate(var(--r)) translateX(0); opacity:var(--o); }
-  50%    { transform:rotate(var(--r)) translateX(calc(var(--dx) * -1)); opacity:calc(var(--o) * .5); }
+.logo381__onda{
+  position:absolute; top:0; left:0; width:150%; height:100%; display:block; overflow:visible;
+  fill:none; stroke-linecap:round; opacity:var(--o);
+  animation:logo381-brisa var(--t) linear infinite, logo381-soplo calc(var(--t) * .62) ease-in-out infinite;
+  will-change:transform, opacity;
 }
-.logo381__num{ position:absolute; inset:0; width:100%; height:100%; display:block; fill:var(--logo381-fg); }
+@keyframes logo381-brisa{ from{ transform:translateX(-33.3333%); } to{ transform:translateX(0); } }
+@keyframes logo381-soplo{ 0%,100%{ opacity:var(--o); } 50%{ opacity:calc(var(--o) * .45); } }
+.logo381__num{ position:absolute; inset:0; width:100%; height:100%; display:block; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+.logo381__halo{ stroke:var(--logo381-bg); }
 .brand-t{ display:flex; flex-direction:column; line-height:1.25; min-width:0; }
 .brand-t b{ font-size:15px; font-weight:700; letter-spacing:-0.01em; }
 .brand-t span{ font-size:12px; color:var(--label-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }

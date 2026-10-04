@@ -43,30 +43,16 @@ function deltaTxt(actual, anterior){
   return `<b class="${d.sube ? 't-up' : 't-down'}">${flecha(d.sube)} ${d.pct}%</b>`;
 }
 
-/* ---------- logo animado "381" (reutilizado en la cabecera y en el candado) ---------- */
-function logo381Html(){
+/* ---------- logo animado "381" (reutilizado en la cabecera y en el candado) ----------
+   Generado por tools/logo381.py. `sfx` evita ids de degradado repetidos en la misma página. */
+function logo381Html(sfx = 'h'){
   return `<div class="logo381" role="img" aria-label="381">
-    <div class="logo381__trail" aria-hidden="true">
-      <span style="--x:75%;--y:12%;--w:7%;--h:1.5%;--r:-10deg;--o:0.16;--t:4.9s;--dl:-0.3s;--dx:2.1px"></span>
-      <span style="--x:18%;--y:17%;--w:6%;--h:1.5%;--r:-15deg;--o:0.15;--t:5.6s;--dl:-2.7s;--dx:1.8px"></span>
-      <span style="--x:54%;--y:26%;--w:6.5%;--h:1.5%;--r:-5deg;--o:0.18;--t:4.3s;--dl:-1.1s;--dx:2.5px"></span>
-      <span style="--x:65%;--y:29%;--w:15%;--h:2%;--r:-16deg;--o:0.35;--t:5.2s;--dl:-4.2s;--dx:4.9px"></span>
-      <span style="--x:32%;--y:31%;--w:12%;--h:2%;--r:-19deg;--o:0.3;--t:4.6s;--dl:-3.4s;--dx:3.9px"></span>
-      <span style="--x:41%;--y:37%;--w:7.5%;--h:1.5%;--r:-21deg;--o:0.2;--t:5.8s;--dl:-0.9s;--dx:2.8px"></span>
-      <span style="--x:64%;--y:38%;--w:28%;--h:4%;--r:-11deg;--o:0.65;--t:4.4s;--dl:-2.1s;--dx:7.0px"></span>
-      <span style="--x:11%;--y:43%;--w:18%;--h:2.5%;--r:-13deg;--o:0.45;--t:5.4s;--dl:-4.9s;--dx:5.6px"></span>
-      <span style="--x:67.5%;--y:50%;--w:5.5%;--h:1.5%;--r:-9deg;--o:0.16;--t:4.8s;--dl:-1.6s;--dx:1.8px"></span>
-      <span style="--x:26%;--y:49%;--w:13%;--h:2%;--r:-9deg;--o:0.34;--t:5.0s;--dl:-3.8s;--dx:4.2px"></span>
-      <span style="--x:5%;--y:55%;--w:16%;--h:2%;--r:-17deg;--o:0.4;--t:4.2s;--dl:-0.6s;--dx:5.3px"></span>
-      <span style="--x:34%;--y:60%;--w:8.5%;--h:1.5%;--r:-7deg;--o:0.22;--t:5.7s;--dl:-2.4s;--dx:3.2px"></span>
-      <span style="--x:13%;--y:66%;--w:10%;--h:1.5%;--r:-13deg;--o:0.26;--t:4.7s;--dl:-4.5s;--dx:3.5px"></span>
-      <span style="--x:53.5%;--y:74.5%;--w:22%;--h:3%;--r:-12deg;--o:0.55;--t:5.3s;--dl:-1.3s;--dx:6.3px"></span>
-      <span style="--x:32.5%;--y:79.5%;--w:9%;--h:1.5%;--r:-8deg;--o:0.22;--t:4.5s;--dl:-3.1s;--dx:2.8px"></span>
-      <span style="--x:78%;--y:70.5%;--w:8%;--h:1.5%;--r:-6deg;--o:0.2;--t:5.5s;--dl:-5.1s;--dx:2.5px"></span>
+    <div class="logo381__brisa" aria-hidden="true">
+      <svg class="logo381__onda" viewBox="0 0 300 200" style="--t:11s;--o:0.55"><path d="M-9.5 52Q15.5 44 40.5 52T90.5 52T140.5 52T190.5 52T240.5 52T290.5 52T340.5 52" stroke="url(#l381b${sfx})" stroke-width="2.6"/></svg>
+      <svg class="logo381__onda" viewBox="0 0 300 200" style="--t:7.5s;--o:0.95"><path d="M-38.2 148Q-13.2 136 11.8 148T61.8 148T111.8 148T161.8 148T211.8 148T261.8 148T311.8 148" stroke="url(#l381b${sfx})" stroke-width="4.2"/></svg>
+      <svg class="logo381__onda" viewBox="0 0 300 200" style="--t:9.5s;--o:0.5"><path d="M-63.7 162Q-38.7 154 -13.7 162T36.3 162T86.3 162T136.3 162T186.3 162T236.3 162T286.3 162T336.3 162" stroke="url(#l381b${sfx})" stroke-width="2.4"/></svg>
     </div>
-    <svg class="logo381__num" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-      <path transform="translate(100 100) rotate(-12) scale(8) translate(-8 -3.5)" d="M0 0h5v1h-5zM7 0h3v1h-3zM14 0h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM10 1h1v1h-1zM13 1h2v1h-2zM4 2h1v1h-1zM6 2h1v1h-1zM10 2h1v1h-1zM14 2h1v1h-1zM1 3h3v1h-3zM7 3h3v1h-3zM14 3h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM10 4h1v1h-1zM14 4h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM0 6h5v1h-5zM7 6h3v1h-3zM13 6h3v1h-3z"/>
-    </svg>
+    <svg class="logo381__num" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><defs><linearGradient id="l381n${sfx}" gradientUnits="userSpaceOnUse" x1="0" y1="58" x2="0" y2="142"><stop offset="0" stop-color="#A8FFC4"/><stop offset="1" stop-color="#5FEA89"/></linearGradient><linearGradient id="l381b${sfx}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="0" spreadMethod="repeat"><stop offset="0" stop-color="#5AC8FA" stop-opacity=".25"/><stop offset=".55" stop-color="#5AC8FA"/><stop offset=".9" stop-color="#C8F6FF"/><stop offset="1" stop-color="#5AC8FA" stop-opacity=".25"/></linearGradient></defs><g transform="translate(104 100) skewX(-12) translate(-104 -100)"><path class="logo381__halo" d="M36.5 64.5L63.5 64.5Q73.5 64.5 73.5 74.5L73.5 125.5Q73.5 135.5 63.5 135.5L36.5 135.5M46.5 100H73.5M99.5 100L99.5 74.5Q99.5 64.5 109.5 64.5L126.5 64.5Q136.5 64.5 136.5 74.5L136.5 125.5Q136.5 135.5 126.5 135.5L109.5 135.5Q99.5 135.5 99.5 125.5L99.5 99.99M99.5 100H136.5M158.5 73.5L166.567 67.9153Q171.5 64.5 171.5 70.5L171.5 135.5" stroke-width="22"/><path d="M36.5 64.5L63.5 64.5Q73.5 64.5 73.5 74.5L73.5 125.5Q73.5 135.5 63.5 135.5L36.5 135.5M46.5 100H73.5M99.5 100L99.5 74.5Q99.5 64.5 109.5 64.5L126.5 64.5Q136.5 64.5 136.5 74.5L136.5 125.5Q136.5 135.5 126.5 135.5L109.5 135.5Q99.5 135.5 99.5 125.5L99.5 99.99M99.5 100H136.5M158.5 73.5L166.567 67.9153Q171.5 64.5 171.5 70.5L171.5 135.5" stroke="url(#l381n${sfx})" stroke-width="13"/></g></svg>
   </div>`;
 }
 
@@ -1689,7 +1675,7 @@ function mostrarGate(onUnlock){
   ov.className = 'gate-ov';
   ov.innerHTML = `
     <div class="gate-card">
-      ${logo381Html()}
+      ${logo381Html('g')}
       <h1>Finanzas</h1>
       <p class="hint">Ingresa la contraseña para entrar en este dispositivo</p>
       <form id="gateForm" class="gate-form" autocomplete="off">
