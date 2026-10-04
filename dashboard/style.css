@@ -65,9 +65,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
            calc(env(safe-area-inset-bottom,0px) + 112px) calc(env(safe-area-inset-left,0px) + 16px);
   display:flex; flex-direction:column; gap:16px;
 }
-#app{ display:flex; flex-direction:column; gap:12px; }
+#app{ display:flex; flex-direction:column; gap:16px; }
 #app > div:empty{ display:none; }
-.vista-cards, #rVista{ display:flex; flex-direction:column; gap:12px; margin-top:12px; }
+.vista-cards, #rVista{ display:flex; flex-direction:column; gap:16px; margin-top:16px; }
 
 /* ---------- cabecera ---------- */
 .top{ display:flex; flex-direction:column; gap:18px; padding:2px 2px 0; view-transition-name: cabecera; }
@@ -621,7 +621,7 @@ button.row:active, a.row:active, .loan.tap:active, .row-tap-inner:active{ backgr
   #app > .card.wide{ grid-column:1 / -1; }
   .note{ grid-column:1 / -1; }
   body[data-page="gastos"] #app{ display:flex; align-items:stretch; }
-  .vista-cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:20px; align-items:start; margin-top:12px; }
+  .vista-cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:20px; align-items:start; margin-top:20px; }
   .vista-cards > .card{ margin:0; width:100%; }
   .vista-cards > .card.wide{ grid-column:1 / -1; }
 
@@ -745,7 +745,8 @@ body{ background:var(--bg); -webkit-font-smoothing:antialiased; letter-spacing:-
 .tabbar a[aria-current="page"]{ background:rgba(255,255,255,.1); color:var(--accent); }
 @media (prefers-reduced-transparency: reduce){ .tabbar{ background:#1C1C1E; backdrop-filter:none; -webkit-backdrop-filter:none; } }
 
-#app{ gap:0; }
+/* Inicio separa sus secciones con su propio margen (títulos de sección fuera de los grupos) */
+body[data-page="inicio"] #app{ gap:0; }
 
 /* tarjeta resumen */
 .ap-card{ background:var(--card); border-radius:24px; padding:18px 18px 16px; display:flex; flex-direction:column; gap:14px; position:relative; overflow:hidden; }
