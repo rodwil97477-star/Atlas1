@@ -175,7 +175,8 @@ function fmtCorto(n){ return n >= 100000 ? Math.round(n/1000) + 'k' : fmtMonto(n
 function fmtPct(part, whole){
   if(!whole) return '0%';
   const v = part/whole*100;
-  return (v < 10 ? v.toFixed(1) : v.toFixed(0)) + '%';
+  if(v === 0) return '0%';
+  return (v < 10 ? v.toFixed(1).replace(/\.0$/, '') : v.toFixed(0)) + '%';
 }
 function horaCorta(d){
   let h = d.getHours(); const ap = h>=12 ? 'p.m.' : 'a.m.'; h = h%12 || 12;
@@ -316,6 +317,7 @@ function tile(nombre, color, chico){
 }
 const SVG = {
   info:'<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0M12 9h.01M11 12h1v4h1"/>',
+  wifiOff:'<path d="M12 18l.01 0M9.172 15.172a4 4 0 0 1 5.656 0M6.343 12.343a7.963 7.963 0 0 1 3.864 -2.14m4.163 .155a7.965 7.965 0 0 1 3.287 2M3.515 9.515a12 12 0 0 1 3.544 -2.455m3.101 -.92a12 12 0 0 1 10.325 3.374M3 3l18 18"/>',
   chev:'<path d="M4 2 8 6 4 10"/>', down:'<path d="M2 4.5 6 8.5 10 4.5"/>',
   home:'<path d="M5 12l-2 0l9 -9l9 9l-2 0M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/>',
   pie:'<path d="M10 3.2a9 9 0 1 0 10.8 10.8a1 1 0 0 0 -1 -1h-6.8a2 2 0 0 1 -2 -2v-7a.9 .9 0 0 0 -1 -.8M15 3.5a9 9 0 0 1 5.5 5.5h-4.5a1 1 0 0 1 -1 -1v-4.5"/>',

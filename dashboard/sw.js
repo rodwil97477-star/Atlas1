@@ -1,4 +1,4 @@
-const CACHE = 'finanzas-shell-v17';
+const CACHE = 'finanzas-shell-v18';
 const SHELL = [
   'index.html', 'presupuesto.html', 'gastos.html', 'compromisos.html', 'historial.html', 'ritmo.html', 'resumen.html', 'explorar.html',
   'style.css', 'data.js', 'app.js', 'manifest.json',

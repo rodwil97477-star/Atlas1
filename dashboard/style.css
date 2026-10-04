@@ -915,3 +915,46 @@ a.ap-row{ transition:opacity .15s ease; } a.ap-row:active{ opacity:.6; }
 .ap-list span{ flex-wrap:wrap; }
 .ap-sm{ display:block; width:100%; font-size:13px; color:var(--label-3); margin-top:1px; }
 .ap-list > div:has(.ap-sm){ align-items:center; }
+
+/* ---- v19 · pulido ---- */
+/* columnas de cifras con ancho fijo: las barras de una lista empiezan y terminan en el mismo lugar */
+.row:has(.row-track) > .right, .row:has(.div-track) > .right{ min-width:96px; } .row:has(.row-track) > .amt{ min-width:84px; } .row:has(.row-track) > .right, .row:has(.row-track) > .amt, .row:has(.div-track) > .right{ text-align:right; align-items:flex-end; }
+.row:has(.row-track) .row-track, .row:has(.div-track) .div-track{ width:100%; }
+/* Pago: el desglose por tipo son pares que nunca se parten por la mitad */
+.split, .row .split{ display:flex; flex-wrap:wrap; gap:2px 12px; margin-top:3px; font-size:13px; color:var(--label-3); letter-spacing:0; }
+.split .pair{ white-space:nowrap; }
+.split .pair b{ color:var(--label-2); font-weight:600; font-variant-numeric:tabular-nums; }
+/* avatares redondos, como todos los íconos de lista */
+.av{ width:32px; height:32px; border-radius:50%; font-size:13px; font-weight:700; }
+/* el botón principal de una tarjeta ocupa todo el ancho, igual en Inicio y Presupuesto */
+.card > .btn{ align-self:stretch; justify-content:center; }
+.btn.sm.done{ background:var(--ok-soft); color:var(--ok); }
+/* sin conexión y sin copia guardada: una tarjeta que explica qué pasó y cómo seguir */
+.state-card{ align-items:center; text-align:center; gap:10px; padding:32px 22px 24px; margin-top:8px; }
+.state-ic{ width:56px; height:56px; border-radius:50%; background:var(--track); display:grid; place-items:center; margin-bottom:4px; }
+.state-t{ margin:0; font-family:var(--font-display); font-size:20px; font-weight:700; letter-spacing:-0.02em; }
+.state-s{ margin:0 0 8px; max-width:34ch; font-size:15px; line-height:1.45; color:var(--label-2); text-wrap:pretty; }
+.state-card .btn{ align-self:stretch; justify-content:center; }
+/* esqueleto de carga con la forma real de la pantalla: resumen con anillo y una lista agrupada */
+.skel{ height:auto; min-height:148px; background-color:var(--card); border-radius:var(--radius); }
+.skel::after{ content:none; }
+.skel.hero{ min-height:236px;
+  background-image:
+    linear-gradient(var(--sunken), var(--sunken)), linear-gradient(var(--sunken), var(--sunken)),
+    linear-gradient(var(--sunken), var(--sunken)), linear-gradient(var(--sunken), var(--sunken)),
+    radial-gradient(circle at center, transparent 34px, var(--sunken) 35px, var(--sunken) 47px, transparent 48px);
+  background-repeat:no-repeat;
+  background-size:30% 14px, 46% 34px, 38% 12px, calc(100% - 36px) 52px, 104px 104px;
+  background-position:18px 24px, 18px 50px, 18px 96px, 18px 162px, calc(100% - 18px) 22px; }
+.skel:not(.hero){
+  background-image:
+    radial-gradient(circle at 19px 19px, var(--sunken) 18.5px, transparent 19.5px), linear-gradient(var(--sunken), var(--sunken)), linear-gradient(var(--sunken), var(--sunken)),
+    radial-gradient(circle at 19px 19px, var(--sunken) 18.5px, transparent 19.5px), linear-gradient(var(--sunken), var(--sunken)), linear-gradient(var(--sunken), var(--sunken));
+  background-repeat:no-repeat;
+  background-size:38px 38px, 42% 12px, 26% 10px, 38px 38px, 36% 12px, 22% 10px;
+  background-position:16px 18px, 66px 24px, 66px 44px, 16px 90px, 66px 96px, 66px 116px; }
+/* foco de teclado también en los desplegables; barra de desplazamiento y cursor con los colores de la app */
+summary:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:8px; }
+html{ scrollbar-color:#3A3A3C transparent; }
+input, textarea{ caret-color:var(--accent); }
+.state-t{ text-wrap:balance; }

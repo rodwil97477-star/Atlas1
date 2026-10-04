@@ -95,7 +95,7 @@ function shell(){
     </div>
     <div class="title-row">
       <h1>${tab.nombre}</h1>
-      <label class="month"><span class="sr">Mes (aplica a todas las pestañas)</span><select id="mes" disabled><option>...</option></select>${svg('down', 12, 'var(--accent)', 2.2).replace('viewBox="0 0 24 24"', 'viewBox="0 0 12 12"')}</label>
+      <label class="month"><span class="sr">Mes (aplica a todas las pestañas)</span><select id="mes" disabled><option>…</option></select>${svg('down', 12, 'var(--accent)', 2.2).replace('viewBox="0 0 24 24"', 'viewBox="0 0 12 12"')}</label>
     </div>`;
   ajustarTitulo();
   $('#tabbar').innerHTML = TABS.map(t => `<a href="${t.href}" data-nav="${t.href}"${t.id === PAGINA ? ' aria-current="page"' : ''}>${svg(t.ic, 22)}<span>${t.nombre}</span></a>`).join('');
@@ -144,7 +144,7 @@ function estadoConexion(tipo){
   if(INFO){
     const d = new Date(INFO.at);
     $('#upd').textContent = 'Rodrigo · ' + d.getDate() + ' ' + MESES_CORTOS[d.getMonth()].toLowerCase() + ', ' + horaCorta(d);
-  }
+  } else if(tipo === 'off') $('#upd').textContent = 'Rodrigo · sin datos todavía';
 }
 
 /* ---------- animación ---------- */
@@ -345,11 +345,13 @@ function stackBar(partes){
   const total = partes.reduce((s, p) => s + p.v, 0) || 1;
   return `<div class="stack gx">${partes.map(p => `<span style="width:${(p.v / total * 100).toFixed(2)}%;background:${p.color}"></span>`).join('')}</div>`;
 }
+/** Un movimiento, estilo Wallet: comercio y monto arriba; categoría y fecha corta abajo. Es la única forma
+    de mostrar un movimiento en la app (Inicio, búsqueda, hojas, días). */
 function filaMov(r, opt){
   opt = opt || {};
-  const sub = opt.sub ? opt.sub(r) : [r.cat2, r.cat3].filter(Boolean).join(' · ');
-  const fecha = opt.soloHora ? (tieneHora(r.fecha) ? horaCorta(r.fecha) : '') : fechaRelativa(r.fecha);
-  return `<div class="row">${tile(iconoFila(r), colorFila(r))}<span class="main"><span class="name">${escapeHtml(r.comercio || '(sin comercio)')}</span><span class="sub">${escapeHtml(sub)}</span></span><span class="right"><span class="amt">${montoTxt(r)}</span><span class="date">${fecha}</span></span></div>`;
+  const sub = opt.sub ? opt.sub(r) : (r.cat1 === 'Terceros' ? `Con ${r.cat2}` : (r.cat3 || r.cat2 || r.cat1));
+  const fecha = opt.soloHora ? (tieneHora(r.fecha) ? horaCorta(r.fecha) : '') : fechaCorta(r.fecha);
+  return `<div class="ap-mv">${tile(iconoFila(r), colorFila(r))}<span class="ap-mv-b"><span class="ap-mv-l1"><span class="ap-mv-n">${escapeHtml(r.comercio || '(sin comercio)')}</span><span class="ap-mv-a">${montoTxt(r)}</span></span><span class="ap-mv-l2"><span class="ap-mv-c">${escapeHtml(sub)}</span>${fecha ? `<span class="ap-mv-d">${fecha}</span>` : ''}</span></span></div>`;
 }
 
 /* ============================================================
@@ -736,13 +738,8 @@ function fechaCorta(f){
   const dias = Math.round((d0 - d1) / 86400000);
   if(dias === 0) return tieneHora(f) ? horaCorta(f) : 'Hoy';
   if(dias === 1) return 'Ayer';
-  if(dias < 7) return NOMBRE_DIA[f.getDay()].replace(/^./, c => c.toUpperCase());
-  return f.getDate() + ' ' + MESES_CORTOS[f.getMonth()].toLowerCase();
-}
-/** movimiento estilo Wallet: comercio y monto arriba; categoría y fecha corta abajo, sin cortar texto */
-function apMov(r){
-  const cat = r.cat1 === 'Terceros' ? `Con ${r.cat2}` : (r.cat3 || r.cat2 || r.cat1);
-  return `<div class="ap-mv">${tile(iconoFila(r), colorFila(r))}<span class="ap-mv-b"><span class="ap-mv-l1"><span class="ap-mv-n">${escapeHtml(r.comercio || '(sin comercio)')}</span><span class="ap-mv-a">${montoTxt(r)}</span></span><span class="ap-mv-l2"><span class="ap-mv-c">${escapeHtml(cat)}</span><span class="ap-mv-d">${fechaCorta(r.fecha)}</span></span></span></div>`;
+  if(dias > 0 && dias < 7) return NOMBRE_DIA[f.getDay()].replace(/^./, c => c.toUpperCase());
+  return f.getDate() + ' ' + MESES_CORTOS[f.getMonth()].toLowerCase() + (f.getFullYear() !== hoy.getFullYear() ? ' ' + f.getFullYear() : '');
 }
 function apFila(href, ic, color, titulo, sub, extra){
   const tag = href ? 'a' : 'div';
@@ -820,7 +817,7 @@ function paginaInicio(){
   /* últimos movimientos estilo Wallet */
   const ult = filas.slice().sort((a, b) => b.fecha - a.fecha);
   html += `<section class="ap-sec anim"><div class="ap-h-row"><h2 class="ap-h">Últimos movimientos</h2>${ult.length > 5 ? `<button class="ap-link" id="verTodos">Ver todos</button>` : ''}</div>
-    <div class="ap-group ap-tx">${ult.slice(0, 5).map(apMov).join('') || '<div class="ap-empty">Sin movimientos este mes.</div>'}</div></section>`;
+    <div class="ap-group ap-tx">${ult.slice(0, 5).map(r => filaMov(r)).join('') || '<div class="ap-empty">Sin movimientos este mes.</div>'}</div></section>`;
 
   /* accesos como filas de Ajustes */
   html += `<section class="ap-sec anim"><h2 class="ap-h">Más</h2><div class="ap-group">
@@ -1044,7 +1041,7 @@ function vistaMedios(k, filas){
   const partes = med.map(g => ({ n: g.clave, v: g.total, color: col(g) }));
   // desglose por tipo; "sin tipo" solo aparece si el medio también tiene débito/crédito (si no, no aporta)
   const desglose = g => { const t = agrupar(g.filas.filter(r => r.tipo), r => r.tipo); if(!t.length) return ''; const sinT = suma(g.filas.filter(r => !r.tipo));
-    return t.map(x => `${escapeHtml(x.clave)}&nbsp;S/&nbsp;${fmtMonto(x.total)}`).concat(sinT > 0 ? [`sin tipo&nbsp;S/&nbsp;${fmtMonto(sinT)}`] : []).join(' + '); };
+    return t.map(x => `<span class="pair">${escapeHtml(x.clave)} <b>S/ ${fmtMonto(x.total)}</b></span>`).concat(sinT > 0 ? [`<span class="pair">Sin tipo <b>S/ ${fmtMonto(sinT)}</b></span>`] : []).join(''); };
   const credito = filas.filter(r => norm(r.tipo) === 'credito');
   let html = card(`${head('Por medio de pago', `<span class="hint">${med.length} medio${med.length === 1 ? '' : 's'}</span>`)}
     ${stackBar(partes)}
@@ -1073,7 +1070,7 @@ function enlazarVista(cont){
 /** v16: marca lo que buscaste dentro de cada resultado (sin importar tildes ni mayúsculas) */
 function resaltar(raiz, q){
   if(!q) return;
-  $$('.row .name, .row .sub', raiz).forEach(el => {
+  $$('.row .name, .row .sub, .ap-mv-n, .ap-mv-c', raiz).forEach(el => {
     if(el.querySelector('mark')) return;
     const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); const nodos = []; let n;
     while((n = w.nextNode())) nodos.push(n);
@@ -1101,10 +1098,10 @@ function buscar(){
   const id = 'bRes';
   res.innerHTML = `<section class="card tight view-in" aria-live="polite">
     ${head('Resultados', `<span class="hint">${hits.length} movimiento${hits.length === 1 ? '' : 's'}${hits.length ? ' · S/ ' + fmtMonto(suma(hits)) : ''}</span>`)}
-    ${hits.length ? listaConMas(hits, 30, r => filaMov(r, { sub: r2 => [r2.cat3 || r2.cat2, monthShortYear(monthKey(r2.fecha))].filter(Boolean).join(' · ') }), ['resultado más', 'resultados más']).replace(/id="l\d+"/, 'id="' + id + '"').replace(/data-mas="l\d+"/, 'data-mas="' + id + '"')
+    ${hits.length ? listaConMas(hits, 30, r => filaMov(r), ['resultado más', 'resultados más']).replace(/id="l\d+"/, 'id="' + id + '"').replace(/data-mas="l\d+"/, 'data-mas="' + id + '"')
       : `<div class="empty">Sin resultados para “${escapeHtml(BUSQ)}”. Prueba con un comercio, una categoría o un monto.</div>`}
     <span class="hint" style="text-align:center;padding-top:8px">${COMPLETO ? 'Buscando en todo tu historial' : `Buscando en los últimos ${MESES.length} meses · para ir más atrás elige "Ver meses anteriores" en el selector de mes`}</span></section>`;
-  enlazarMas(res, { [id]: { filas: hits, render: r => filaMov(r, { sub: r2 => [r2.cat3 || r2.cat2, monthShortYear(monthKey(r2.fecha))].filter(Boolean).join(' · ') }) } });
+  enlazarMas(res, { [id]: { filas: hits, render: r => filaMov(r) } });
   resaltar(res, q);
   $$('[data-mas]', res).forEach(b => b.addEventListener('click', () => setTimeout(() => resaltar(res, q), 0)));
 }
@@ -1419,7 +1416,7 @@ function paginaCompromisos(){
   const rec = detectarRecurrentes(ALL).filter(rc => rc.ultimo.cat2 !== 'Fijo' && rc.estable).sort((a, b) => b.meses.length - a.meses.length || b.ultimo.montoSoles - a.ultimo.montoSoles);
   html += card(`${head('Recurrentes detectados', '<span class="hint">no están en tus fijos</span>')}
     <p class="hint tuto" style="margin:2px 0 4px;line-height:1.45">Comercios que te cobran casi todos los meses. Si son fijos, márcalos para seguirlos arriba.</p>
-    <div class="list" id="recList">${rec.map((rc, idx) => { const on = marc.includes(rc.clave); return `<div class="row"${idx >= 5 ? ' hidden data-extra' : ''}>${tile(iconoFila(rc.ultimo), colorFila(rc.ultimo))}<span class="main"><span class="name">${escapeHtml(rc.nombre)}</span><span class="sub">~S/ ${fmtSol(rc.ultimo.montoSoles)} · ${rc.meses.length} meses</span></span><button type="button" class="btn sm${on ? ' done' : ''}" data-fijo="${escapeHtml(rc.clave)}" aria-pressed="${on}">${on ? 'Marcado como fijo' : 'Marcar como fijo'}</button></div>`; }).join('') || '<div class="empty">No detecto otros cobros recurrentes.</div>'}</div>${rec.length > 5 ? `<button class="more" id="recMas" style="align-self:center">Ver ${rec.length - 5} más</button>` : ''}`, 'tight');
+    <div class="list" id="recList">${rec.map((rc, idx) => { const on = marc.includes(rc.clave); return `<div class="row"${idx >= 5 ? ' hidden data-extra' : ''}>${tile(iconoFila(rc.ultimo), colorFila(rc.ultimo))}<span class="main"><span class="name">${escapeHtml(rc.nombre)}</span><span class="sub">S/ ${fmtSol(rc.ultimo.montoSoles)} · ${rc.meses.length} meses</span></span><button type="button" class="btn sm${on ? ' done' : ''}" data-fijo="${escapeHtml(rc.clave)}" aria-pressed="${on}" aria-label="${on ? 'Quitar de tus fijos' : 'Marcar como fijo'}: ${escapeHtml(rc.nombre)}">${on ? 'Es fijo' : 'Marcar fijo'}</button></div>`; }).join('') || '<div class="empty">No detecto otros cobros recurrentes.</div>'}</div>${rec.length > 5 ? `<button class="more" id="recMas" style="align-self:center">Ver ${rec.length - 5} más</button>` : ''}`, 'tight');
 
   if(pendientes.length){
     const orig = grupos.reduce((s, g) => s + g.original, 0), pagT = grupos.reduce((s, g) => s + g.pagado, 0);
@@ -1498,7 +1495,7 @@ function filaPrestamoDetalle(p, saldado){
   const monto = saldado ? orig : saldo;
   const detalle = saldado ? 'saldado' : '';
   const icono = e ? tile(iconoFila(e), colorFila(e)) : tile('Préstamos', colorDe('Préstamos', 2));
-  const cuerpo = `${icono}<span class="main"><span class="name">${escapeHtml(nombre)}</span><span class="sub">${!saldado && p.pagado > 0 ? `abonó ${sb} ${fmtSol(pag)} de ${sb} ${fmtSol(orig)}` : escapeHtml(tipo) + (detalle ? ' · ' + detalle : '')}</span></span><span class="right"><span class="amt">${sb} ${fmtSol(monto)}</span><span class="date">${p.fecha ? fechaRelativa(p.fecha) : ''}</span></span>`;
+  const cuerpo = `${icono}<span class="main"><span class="name">${escapeHtml(nombre)}</span><span class="sub">${!saldado && p.pagado > 0 ? `abonó ${sb} ${fmtSol(pag)} de ${sb} ${fmtSol(orig)}` : escapeHtml(tipo) + (detalle ? ' · ' + detalle : '')}</span></span><span class="right"><span class="amt">${sb} ${fmtSol(monto)}</span><span class="date">${p.fecha ? fechaCorta(p.fecha) : ''}</span></span>`;
   return e && e.comercio
     ? `<button type="button" class="row${saldado ? ' dim' : ''}" data-com="${escapeHtml(e.comercio)}">${cuerpo}</button>`
     : `<div class="row${saldado ? ' dim' : ''}">${cuerpo}</div>`;
@@ -1585,7 +1582,7 @@ function paginaHistorial(){
     .filter(x => Math.abs(x.d) >= 1).sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
   const maxD = Math.max(1, ...cambios.map(x => Math.abs(x.d)));
   const sube = cambios.filter(x => x.d > 0).reduce((a, x) => a + x.d, 0), baja = -cambios.filter(x => x.d < 0).reduce((a, x) => a + x.d, 0);
-  const filaCambio = (x, i) => `<button class="row" data-c1="${escapeHtml(x.c1)}" data-c2="${escapeHtml(x.c2)}">${tile(x.c2, colorDe(x.c2, 2))}<span class="main"><span class="name">${escapeHtml(x.c2)}</span><span class="sub">S/ ${fmtMonto(x.a)} ahora · S/ ${fmtMonto(x.b)} antes</span>
+  const filaCambio = (x, i) => `<button class="row" data-c1="${escapeHtml(x.c1)}" data-c2="${escapeHtml(x.c2)}">${tile(x.c2, colorDe(x.c2, 2))}<span class="main"><span class="name">${escapeHtml(x.c2)}</span><span class="sub">S/ ${fmtMonto(x.b)} → S/ ${fmtMonto(x.a)}</span>
       <span class="div-track"><span class="div-bar ${x.d > 0 ? 'up' : 'down'} gx" style="--i:${i};width:${(Math.abs(x.d) / maxD * 50).toFixed(1)}%"></span></span></span>
       <span class="right"><span class="amt ${x.d > 0 ? 't-up' : 't-down'}">${x.d > 0 ? '+' : '-'}S/ ${fmtMonto(Math.abs(x.d))}</span><span class="date">${x.b > 0 ? (x.d > 0 ? '+' : '-') + Math.round(Math.abs(x.d) / x.b * 100) + '%' : 'nuevo'}</span></span>${chev()}</button>`;
   /* categorías mes a mes: mapa de calor (cada fila se compara contra su propio máximo) */
@@ -1615,7 +1612,7 @@ function paginaHistorial(){
   const maxC = coms.length ? coms[0].total : 1;
   html += card(`${head('Tus comercios del periodo', `<span class="hint">${meses.length} meses</span>`)}
     <div class="list">${coms.map((g, i) => { const r0 = g.filas[0], nm = new Set(g.filas.map(r => monthKey(r.fecha))).size;
-      return `<button class="row" data-com="${escapeHtml(g.clave)}">${tile(iconoFila(r0), colorFila(r0))}<span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} compra${g.n === 1 ? '' : 's'} · en ${nm} de ${meses.length} meses</span><span class="track row-track"><span class="gx" style="--i:${i};width:${(g.total / maxC * 100).toFixed(1)}%;background:${colorFila(r0)}"></span></span></span><span class="amt">S/ ${fmtMonto(g.total)}</span>${chev()}</button>`; }).join('') || '<div class="empty">Sin comercios en el periodo.</div>'}</div>`, 'tight');
+      return `<button class="row" data-com="${escapeHtml(g.clave)}">${tile(iconoFila(r0), colorFila(r0))}<span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} compra${g.n === 1 ? '' : 's'} · ${nm === meses.length ? 'cada mes' : `${nm} de ${meses.length} meses`}</span><span class="track row-track"><span class="gx" style="--i:${i};width:${(g.total / maxC * 100).toFixed(1)}%;background:${colorFila(r0)}"></span></span></span><span class="amt">S/ ${fmtMonto(g.total)}</span>${chev()}</button>`; }).join('') || '<div class="empty">Sin comercios en el periodo.</div>'}</div>`, 'tight');
 
   html += `<p class="note">El mes en curso cuenta en el total, pero no en el promedio ni en el mes más alto o más bajo, porque todavía no terminó.${actual ? ` "Qué cambió" compara los primeros ${lim} días de cada mes.` : ''}</p>`;
   $('#app').innerHTML = html;
@@ -1693,7 +1690,13 @@ function cargar(data, info){
 function alFallarCarga(err, hayCache){
   if(REFRESCO_MANUAL){ REFRESCO_MANUAL = false; aviso('No se pudo actualizar. Revisa tu conexión.', 'error'); }
   if(hayCache){ estadoConexion('off'); return; }
-  $('#app').innerHTML = `<div class="state">No se pudieron cargar los datos.<br><span style="font-size:12px">${escapeHtml(mensajeError(err))}</span><br><br><button class="btn" onclick="location.reload()">Reintentar</button></div>`;
+  $('#app').innerHTML = `<section class="card state-card" role="alert">
+    <span class="state-ic">${svg('wifiOff', 26, 'var(--label-2)', 2)}</span>
+    <h2 class="state-t">No se pudieron cargar tus datos</h2>
+    <p class="state-s">${escapeHtml(mensajeError(err))}</p>
+    <button class="btn solid" type="button" id="reintentar">Reintentar</button>
+  </section>`;
+  $('#reintentar').addEventListener('click', () => location.reload());
   estadoConexion('off');
 }
 /** v16: aviso breve arriba (movimientos nuevos, al día, error). Entra y sale con transición; no bloquea nada. */
