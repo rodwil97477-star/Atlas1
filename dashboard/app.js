@@ -739,7 +739,7 @@ function htmlMeta(k, total, gasto, h){
   const dm = h.dm, actual = h.actual, dias = h.dias, rest = actual ? dm - dias : 0;
   const cabeza = `${head('Gasto del mes', `<span class="chip">${actual ? `día ${dias} de ${dm}` : 'mes cerrado'}</span>`)}
     <div class="big" id="heroNum">S/ ${fmtMonto(total)}</div>
-    <div class="chips">${deltaChip(total, h.totalPrev, 'vs ' + monthShort(h.prev))}${h.prom3 ? `<span class="chip">prom. 3m <b>S/ ${fmtMonto(h.prom3)}</b></span>` : ''}${dias ? `<span class="chip">S/ ${fmtMonto(total / dias)} por día</span>` : ''}</div>`;
+    <div class="chips">${deltaChip(total, h.totalPrev, 'vs ' + monthShort(h.prev))}${h.prom3 ? `<span class="chip">prom. 3m <b>S/ ${fmtMonto(h.prom3)}</b></span>` : ''}${actual && dias ? `<span class="chip">S/ ${fmtMonto(total / dias)} por día</span>` : ''}</div>`;
   const reparto = h.cat1.length ? `<div class="hero-split"><span class="block-label">En qué se fue</span>${stackBar(h.cat1)}<div class="legend">${h.cat1.map(c => `<span><i style="background:${c.color}"></i>${escapeHtml(c.n)} <b>S/ ${fmtMonto(c.v)}</b></span>`).join('')}</div></div>` : '';
   if(!meta){
     return card(`${cabeza}${reparto}
@@ -901,9 +901,9 @@ function paginaGastos(){
     </section>
     <div id="gRes"></div>
     <div id="gMain" ${BUSQ ? 'hidden' : ''}>
-      ${card(`${head('Total del mes', `<span class="chip">${filas.length} movimiento${filas.length === 1 ? '' : 's'}</span>`)}
+      ${card(`${head('Todo lo que salió', `<span class="chip">${filas.length} movimiento${filas.length === 1 ? '' : 's'}</span>`)}
         <div class="big md" id="heroNum">S/ ${fmtMonto(total)}</div>
-        <div class="chips">${deltaChip(total, suma(filasMes(prev)), 'vs ' + monthShort(prev))}${fin > 0 ? `<span class="chip">incluye Finanzas${terc ? ' y Terceros' : ''} <b>S/ ${fmtMonto(fin)}</b></span>` : ''}</div>`)}
+        <div class="chips">${deltaChip(total, suma(filasMes(prev)), 'vs ' + monthShort(prev))}${fin > 0 ? `<span class="chip">gasto <b>S/ ${fmtMonto(total - fin)}</b></span><span class="chip">+ Finanzas${terc ? ' y Terceros' : ''} <b>S/ ${fmtMonto(fin)}</b></span>` : ''}</div>`)}
       <div id="gVista" class="vista-cards"></div>
     </div>`;
   contar($('#heroNum'), total);
@@ -952,8 +952,9 @@ function vistaCategorias(k, filas){
       // v17: aquí la barra es solo el tamaño de cada subcategoría; el semáforo del presupuesto vive en la pestaña Presupuesto
       const pct = g.total / maxC2 * 100;
       const sobrePresu = presu && g.total > presu;
-      const sub = `<span class="sub">${g.n} mov.${dt ? ' · ' + dt : ''}${presu ? ` · <span style="color:${sobrePresu ? TINTA.alto : 'inherit'};font-weight:${sobrePresu ? 700 : 500}">presup. S/ ${fmtMonto(presu)}</span>` : ''}</span>`;
-      return `<button class="row" data-c1="${escapeHtml(g1.clave)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, col)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span>${sub}<span class="track row-track"><span class="gx" style="--i:${i};width:${pct.toFixed(1)}%;background:${col}"></span></span></span><span class="amt" style="min-width:56px;text-align:right">S/ ${fmtMonto(g.total)}</span>${chev()}</button>`;
+      const sub = `<span class="sub">${g.n} mov.${dt ? ' · ' + dt : ''}</span>`;
+      const derecha = `<span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span>${presu ? `<span class="date" style="color:${sobrePresu ? TINTA.alto : 'var(--label-3)'};font-weight:${sobrePresu ? 700 : 500}">de S/ ${fmtMonto(presu)}</span>` : ''}</span>`;
+      return `<button class="row" data-c1="${escapeHtml(g1.clave)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, col)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span>${sub}<span class="track row-track"><span class="gx" style="--i:${i};width:${pct.toFixed(1)}%;background:${col}"></span></span></span>${derecha}${chev()}</button>`;
     }).join('') + '</div>';
     subs += `<div class="cat-group">${grupo}</div>`;
   });
