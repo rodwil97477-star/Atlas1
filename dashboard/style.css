@@ -233,10 +233,10 @@ button.row, a.row{ cursor:pointer; }
 /* ---------- cartel de estado (firma del sistema) ----------
    El estado del mes no es un chip: es una franja de color a todo lo ancho,
    como un afiche. Verde 381 = vas bien, amarillo = vas justo, rosa = te pasaste. */
-.cartel{ --st:var(--ok); display:flex; align-items:flex-end; justify-content:space-between; gap:10px 14px; flex-wrap:wrap;
-  margin:-18px -18px 2px; padding:16px 18px 14px; border-radius:var(--radius) var(--radius) 0 0; background:var(--st); color:var(--ink); }
-.cartel b{ font-family:var(--font-cartel); font-weight:400; font-size:38px; line-height:.9; letter-spacing:0.01em; text-transform:uppercase; }
-.cartel span{ font-size:13px; font-weight:700; color:rgba(16,16,20,0.74); padding-bottom:3px; }
+.cartel{ --st:var(--ok); display:flex; align-items:center; justify-content:space-between; gap:6px 14px; flex-wrap:wrap;
+  margin:-18px -18px 2px; padding:10px 18px 9px; border-radius:var(--radius) var(--radius) 0 0; background:var(--st); color:var(--ink); }
+.cartel b{ font-family:var(--font-cartel); font-weight:400; font-size:27px; line-height:.95; letter-spacing:0.015em; text-transform:uppercase; }
+.cartel span{ font-size:12.5px; font-weight:700; color:rgba(16,16,20,0.74); }
 .cartel.st-ok{ --st:var(--ok); } .cartel.st-justo{ --st:var(--justo); } .cartel.st-alto{ --st:var(--alto); }
 
 .pill-state{ --st:var(--ok); display:inline-flex; align-items:center; font-size:11.5px; font-weight:800; padding:4px 8px; border-radius:6px; white-space:nowrap;
@@ -545,7 +545,7 @@ mark.hl{ background:color-mix(in srgb, var(--accent) 26%, transparent); color:va
 .pill-state.st-alto i{ display:block; position:relative; width:6px; height:6px; border-radius:1px; background:var(--ink); }
 .pill-state.st-alto i::after, .cartel.st-alto b i::after{ content:''; position:absolute; inset:0; border-radius:inherit; background:currentColor; animation:anillo 1.6s ease-out infinite; }
 .cartel b i{ display:none; }
-.cartel.st-alto b i{ display:inline-block; position:relative; width:11px; height:11px; margin:0 10px 6px 0; vertical-align:middle; border-radius:2px; background:var(--ink); color:var(--ink); }
+.cartel.st-alto b i{ display:inline-block; position:relative; width:8px; height:8px; margin:0 8px 4px 0; vertical-align:middle; border-radius:2px; background:var(--ink); color:var(--ink); }
 .tabbar{ animation:navIn .7s var(--ease-v13) both .1s; }
 
 /* respuesta al toque (v13): todo lo que se toca se hunde un poco */
@@ -600,7 +600,7 @@ button.row:active, a.row:active, .loan.tap:active, .row-tap-inner:active{ backgr
 
   .wrap{ flex:1 1 auto; min-width:0; max-width:816px; margin:0; padding:40px 48px 64px; }
   .card{ padding:22px 24px; }
-  .cartel{ margin:-22px -24px 4px; padding:18px 24px 16px; }
+  .cartel{ margin:-22px -24px 4px; padding:11px 24px 10px; }
   .title-row h1{ font-size:52px; }
   @media (hover:hover){
     button.row:hover, a.row:hover{ background:var(--sunken); border-radius:10px; }
@@ -689,3 +689,35 @@ body.gate-lock .wrap, body.gate-lock .tabbar{ display:none; }
 /* Gastos tiene 4 vistas: en pantallas angostas el texto se achica un poco para que ninguna etiqueta se pegue */
 @media (max-width:400px){ #vista button{ font-size:12px; padding:0 3px; letter-spacing:-0.01em; } }
 @media (max-width:340px){ #vista button{ font-size:11.5px; padding:0 2px; letter-spacing:-0.02em; } }
+
+/* ===== v17 · menos ruido visual =====
+   Etiquetas neutras como texto simple (las píldoras quedan solo para cambios que importan),
+   métricas como filas con línea fina en vez de cajitas, ayuda que desaparece con el uso. */
+.chips{ gap:6px 14px; align-items:center; }
+.chips .chip:not(.up):not(.down){ background:none; padding:2px 0; color:var(--label-3); font-weight:550; }
+.chips .chip:not(.up):not(.down) b{ color:var(--label-2); }
+.card-head .chip{ background:none; padding:0; color:var(--label-3); font-weight:600; }
+.chip .arrow{ opacity:.85; }
+.metrics{ gap:0 18px; }
+.metric{ background:none; border-radius:0; padding:10px 0 4px; border-top:1px solid var(--sep); }
+.stat3{ gap:0; }
+.stat3 .metric{ padding:10px 0 4px 12px; border-left:1px solid var(--sep); }
+.stat3 .metric:first-child{ padding-left:0; border-left:0; }
+@media (max-width:370px){ .stat3 .metric{ padding:9px 0 4px 9px; } }
+/* "Ver detalle": lo secundario de la tarjeta principal, a un toque */
+.mas{ border-top:1px solid var(--sep); padding-top:4px; }
+.mas > summary{ list-style:none; cursor:pointer; display:flex; align-items:center; gap:6px; min-height:40px; font-size:13.5px; font-weight:650; color:var(--accent); -webkit-tap-highlight-color:transparent; }
+.mas > summary::-webkit-details-marker{ display:none; }
+.mas > summary svg{ transition:transform .3s var(--ease-v13); }
+.mas[open] > summary svg{ transform:rotate(90deg); }
+.mas[open] > summary .ver{ display:none; } .mas:not([open]) > summary .ocultar{ display:none; }
+.mas-body{ display:flex; flex-direction:column; gap:14px; padding:4px 0 6px; animation:masIn .35s var(--ease-v13) both; }
+@keyframes masIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+/* notas al pie: detrás de un "Cómo se calcula" */
+.note-i{ margin:2px 6px 0; }
+.note-i > summary{ list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; min-height:36px; font-size:12.5px; font-weight:600; color:var(--label-3); }
+.note-i > summary::-webkit-details-marker{ display:none; }
+.note-i .note{ margin:0 0 4px; }
+@media (min-width:1150px){ .note-i{ grid-column:1 / -1; } body[data-page="inicio"] #app > .note-i{ order:4; } }
+/* la ayuda ("toca para…") se muestra las primeras veces; después ya sabes cómo funciona */
+body.veterano .tap-hint, body.veterano .hint-tap, body.veterano .tuto{ display:none !important; }

@@ -314,6 +314,7 @@ function tile(nombre, color, chico){
   return `<span class="tile${chico?' sm':''}" style="background:${alpha(color,0.14)}">${icono(nombre, color, chico?16:18)}</span>`;
 }
 const SVG = {
+  info:'<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0M12 9h.01M11 12h1v4h1"/>',
   chev:'<path d="M4 2 8 6 4 10"/>', down:'<path d="M2 4.5 6 8.5 10 4.5"/>',
   home:'<path d="M5 12l-2 0l9 -9l9 9l-2 0M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/>',
   pie:'<path d="M10 3.2a9 9 0 1 0 10.8 10.8a1 1 0 0 0 -1 -1h-6.8a2 2 0 0 1 -2 -2v-7a.9 .9 0 0 0 -1 -.8M15 3.5a9 9 0 0 1 5.5 5.5h-4.5a1 1 0 0 1 -1 -1v-4.5"/>',

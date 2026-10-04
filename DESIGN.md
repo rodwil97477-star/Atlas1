@@ -254,6 +254,14 @@ Rises from the bottom on phones (550ms, cubic-bezier(0.32,0.72,0,1)), drag to di
 ### Icons
 Tabler Icons (MIT), outline, 2px stroke on a 24px grid, copied as paths into data.js (no runtime dependency). Each category has its own pictogram (basket for groceries, gas pump for fuel, piggy bank for savings...); navigation uses the same family.
 
+### Quiet by default (v17)
+- Colour on a change only when it matters: deltas under 15% are grey; red and green are kept for real moves and for the traffic light.
+- Neutral facts are plain grey text, not pills; pills are only for coloured changes.
+- Metrics are rows divided by hairlines, never boxes inside a card.
+- The state band ("VAS A PASARTE") is a slim strip (27px Anton) on top of its card.
+- Inicio shows only state, total, meter and "Para no pasarte"; the rest sits behind "Ver detalle".
+- Usage hints ("toca para…") show for the first three visits; page footnotes sit behind "Cómo se calcula".
+
 ### Logo 381
 Pixel mark: solid 6x10-cell numerals (2-cell stroke, clipped corners, 7/200 cell) in a true italic `skewX(-12)`, logo green gradient, on a ground-coloured halo. Behind them run three currents of pixel breeze gusts: each gust is nine cells that step up or down one row halfway, from a faint celeste tail to a pale-cyan head. In the header (34px) and the gate (56px) each current is its own layer that slides exactly one gust period on a slow linear loop (6.5 to 9.5s, with a gentle opacity breath); numerals never move. Only transform and opacity are animated, so the global reduced-motion rule freezes it on the same pose as the static icon. Geometry lives in `tools/logo381.py`; never redraw it by hand.
 
