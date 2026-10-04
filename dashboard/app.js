@@ -91,13 +91,23 @@ function shell(){
         ${logo381Html()}
         <div class="brand-t"><b>Finanzas</b><span id="upd">Rodrigo · cargando…</span></div>
       </div>
-      <button type="button" class="live off" id="live" aria-label="Actualizar datos"><i></i><span>Conectando</span></button>
+      <div class="brand-r">
+        <button type="button" class="tema-btn" id="temaBtn"></button>
+        <button type="button" class="live off" id="live" aria-label="Actualizar datos"><i></i><span>Conectando</span></button>
+      </div>
     </div>
     <div class="title-row">
       <h1>${tab.nombre}</h1>
       <label class="month"><span class="sr">Mes (aplica a todas las pestañas)</span><select id="mes" disabled><option>…</option></select>${svg('down', 12, 'var(--accent)', 2.2).replace('viewBox="0 0 24 24"', 'viewBox="0 0 12 12"')}</label>
     </div>`;
   ajustarTitulo();
+  pintarBotonTema();
+  $('#temaBtn').addEventListener('click', () => {
+    const orden = ['auto', 'claro', 'oscuro'], sig = orden[(orden.indexOf(temaPreferido()) + 1) % orden.length];
+    try{ localStorage.setItem(TEMA_KEY, sig); }catch(e){}
+    cambiarTema();
+    aviso(sig === 'auto' ? 'Apariencia automática, como tu teléfono' : (sig === 'claro' ? 'Modo día' : 'Modo noche'), 'ok');
+  });
   $('#tabbar').innerHTML = TABS.map(t => `<a href="${t.href}" data-nav="${t.href}"${t.id === PAGINA ? ' aria-current="page"' : ''}>${svg(t.ic, 22)}<span>${t.nombre}</span></a>`).join('');
   $('#mes').addEventListener('change', e => {
     if(e.target.value === '__todo'){
@@ -118,6 +128,24 @@ function ajustarTitulo(){
   while(h.scrollWidth > h.clientWidth + 1 && t > 20){ t -= 1; h.style.fontSize = t + 'px'; }
 }
 addEventListener('resize', () => ajustarTitulo());
+/* v20: modo día. Automático (sigue al teléfono), Día o Noche; el botón muestra el estado elegido */
+function pintarBotonTema(){
+  const b = $('#temaBtn'); if(!b) return;
+  const pref = temaPreferido();
+  const ic = pref === 'auto' ? 'temaAuto' : (pref === 'claro' ? 'sol' : 'luna');
+  const txt = pref === 'auto' ? 'automática' : (pref === 'claro' ? 'día' : 'noche');
+  b.innerHTML = svg(ic, 19, 'currentColor', 2);
+  b.setAttribute('aria-label', `Apariencia: ${txt}. Toca para cambiar`);
+  b.title = `Apariencia: ${txt}`;
+}
+function cambiarTema(){
+  const antes = document.documentElement.dataset.tema, raiz = document.documentElement;
+  if(!REDUCIR_MOVIMIENTO){ raiz.classList.add('cambiando-tema'); clearTimeout(cambiarTema._t); cambiarTema._t = setTimeout(() => raiz.classList.remove('cambiando-tema'), 450); }
+  aplicarTema(); pintarBotonTema();
+  if(document.documentElement.dataset.tema !== antes && ALL.length) render(true);
+}
+try{ matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if(temaPreferido() === 'auto') cambiarTema(); }); }catch(e){}
+aplicarTema();
 function actualizarLinks(){
   $$('[data-nav]').forEach(a => {
     const base = a.getAttribute('data-nav');
@@ -1057,7 +1085,7 @@ function vistaMedios(k, filas){
   const med = agrupar(filas, r => r.medio || 'Sin registrar');
   const total = suma(filas);
   const conColor = med.filter(x => x.clave !== 'Sin registrar');
-  const col = g => g.clave === 'Sin registrar' || conColor.indexOf(g) >= COLORES_MEDIO.length - 1 ? TINTA.neutro : COLORES_MEDIO[conColor.indexOf(g)];
+  const col = g => g.clave === 'Sin registrar' || conColor.indexOf(g) >= COLORES_MEDIO.length - 1 ? TINTA.neutro : paraTema(COLORES_MEDIO[conColor.indexOf(g)]);
   const partes = med.map(g => ({ n: g.clave, v: g.total, color: col(g) }));
   // desglose por tipo; "sin tipo" solo aparece si el medio también tiene débito/crédito (si no, no aporta)
   const desglose = g => { const t = agrupar(g.filas.filter(r => r.tipo), r => r.tipo); if(!t.length) return ''; const sinT = suma(g.filas.filter(r => !r.tipo));
@@ -1160,7 +1188,7 @@ function vistaRitmoActividad(k){
     if(d > lim){ cal += `<span class="d fut"><span class="n">${d}</span></span>`; continue; }
     const lv = nivel(pd.v[d]), bg = lv < 0 ? 'var(--fill)' : alpha(TINTA.accent, AL[lv]);
     const wd = new Date(pd.y, pd.m - 1, d).getDay();
-    cal += `<button type="button" class="d pp ${lv >= 2 ? 'dark' : 'light'}${actual && d === lim ? ' today' : ''}" style="--i:${d};background:${bg}" data-dia="${d}" aria-pressed="${d === DIA_SEL}" aria-label="${NOMBRE_DIA[wd]} ${d}, S/ ${fmtMonto(pd.v[d])}"><span class="n">${d}</span><span class="a">${pd.v[d] > 0 ? fmtCorto(pd.v[d]) : ''}</span></button>`;
+    cal += `<button type="button" class="d pp ${lv >= (document.documentElement.dataset.tema === 'claro' ? 4 : 2) ? 'dark' : 'light'}${actual && d === lim ? ' today' : ''}" style="--i:${d};background:${bg}" data-dia="${d}" aria-pressed="${d === DIA_SEL}" aria-label="${NOMBRE_DIA[wd]} ${d}, S/ ${fmtMonto(pd.v[d])}"><span class="n">${d}</span><span class="a">${pd.v[d] > 0 ? fmtCorto(pd.v[d]) : ''}</span></button>`;
   }
   let dMax = 1; for(let d = 1; d <= lim; d++) if(pd.v[d] > pd.v[dMax]) dMax = d;
   html += card(`${head(MESES_LARGOS[pd.m - 1].replace(/^./, c => c.toUpperCase()) + ' día por día', '<span class="hint hint-tap">toca un día</span>')}

@@ -238,16 +238,47 @@ const COLOR_N3 = {
 };
 /* v15: el celeste es el color de la interfaz (selección, acciones, gráficos). Verde, amarillo y rojo
    son solo semáforo: dicen cómo vas, nunca decoran. */
-/* v18: el semáforo usa los colores de sistema de iOS (verde, amarillo, rojo, naranja) */
-const TINTA = { accent:'#5AC8FA', ok:'#30D158', justo:'#FFD60A', alto:'#FF453A', warn:'#FF9F0A', info:'#5AC8FA', neutro:'#6B6E7A' };
+/* v18: el semáforo usa los colores de sistema de iOS (verde, amarillo, rojo, naranja).
+   v20: modo día. Cada tema tiene su juego de tintas; en el claro van versiones más profundas
+   para que el texto de color se lea sobre blanco (todas ≥4.5:1, salvo neutro que no es texto). */
+const TINTAS = {
+  oscuro: { accent:'#5AC8FA', ok:'#30D158', justo:'#FFD60A', alto:'#FF453A', warn:'#FF9F0A', info:'#5AC8FA', neutro:'#6B6E7A' },
+  claro:  { accent:'#0B6FAE', ok:'#1A7F37', justo:'#9A6700', alto:'#D70015', warn:'#C2410C', info:'#0B6FAE', neutro:'#8E8E93' }
+};
+const TINTA = Object.assign({}, TINTAS[document.documentElement.dataset.tema === 'claro' ? 'claro' : 'oscuro']);
+const TEMA_KEY = 'finanzas_tema';
+function temaPreferido(){ try{ return localStorage.getItem(TEMA_KEY) || 'auto'; }catch(e){ return 'auto'; } }
+function temaResuelto(pref){ pref = pref || temaPreferido(); return pref === 'auto' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'oscuro') : pref; }
+/** Aplica el tema: atributo en <html>, tintas para el JS, color de la barra del sistema. */
+function aplicarTema(){
+  const t = temaResuelto();
+  document.documentElement.dataset.tema = t;
+  document.documentElement.dataset.temaPref = temaPreferido();
+  Object.assign(TINTA, TINTAS[t]);
+  _colorTema = {};
+  const m = document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content', t === 'claro' ? '#F2F2F7' : '#050506');
+  return t;
+}
+/** En modo día, un color de categoría demasiado claro se oscurece hasta leerse sobre blanco (≥3:1, el mínimo para gráficos e íconos). */
+let _colorTema = {};
+function paraTema(hex){
+  if(document.documentElement.dataset.tema !== 'claro' || !hex || hex[0] !== '#' || hex.length !== 7) return hex;
+  if(_colorTema[hex]) return _colorTema[hex];
+  const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const lum = (r, g, b) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16), k = 0;
+  while(1.05 / (lum(r, g, b) + 0.05) < 3 && k++ < 40){ r *= 0.94; g *= 0.94; b *= 0.94; }
+  const h = '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase();
+  return (_colorTema[hex] = h);
+}
 const PALETA_RESERVA = ['#5EA2FF','#FF9440','#2FD3C2','#FF8ADF','#C9A6FF','#E3C08F','#7C7CFF','#9BE7D8','#FF7D45','#8E9AB8','#F7A6F0','#B9DDFF'];
 function _hash(t, n){ let h = 0; for(let i=0;i<t.length;i++) h = (h*31 + t.charCodeAt(i)) >>> 0; return h % n; }
 function colorDe(nombre, nivel){
   const k = norm(nombre);
-  if(nivel === 1 && COLOR_N1[k]) return COLOR_N1[k];
-  if(nivel === 2 && COLOR_N2[k]) return COLOR_N2[k];
-  if(nivel === 3 && COLOR_N3[k]) return COLOR_N3[k];
-  return COLOR_N2[k] || COLOR_N3[k] || COLOR_N1[k] || PALETA_RESERVA[_hash(k, PALETA_RESERVA.length)];
+  if(nivel === 1 && COLOR_N1[k]) return paraTema(COLOR_N1[k]);
+  if(nivel === 2 && COLOR_N2[k]) return paraTema(COLOR_N2[k]);
+  if(nivel === 3 && COLOR_N3[k]) return paraTema(COLOR_N3[k]);
+  return paraTema(COLOR_N2[k] || COLOR_N3[k] || COLOR_N1[k] || PALETA_RESERVA[_hash(k, PALETA_RESERVA.length)]);
 }
 function alpha(hex, a){
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -342,6 +373,9 @@ const SVG = {
   abajoF:'<path d="M12 5l0 14M18 13l-6 6M6 13l6 6"/>',
   alerta:'<path d="M12 9v4M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0M12 16h.01"/>',
   calendario:'<path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12M16 3v4M8 3v4M4 11h16M8 14v4M12 14v4M16 14v4"/>',
+  sol:'<path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/>',
+  luna:'<path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"/>',
+  temaAuto:'<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M12 3v18M12 9l4.65 -4.65M12 14.3l7.37 -7.37M12 19.6l8.85 -8.85"/>',
   sube:'<path d="M17 7l-10 10M8 7l9 0l0 9"/>',
   baja:'<path d="M7 7l10 10M17 8l0 9l-9 0"/>'
 };
@@ -372,8 +406,8 @@ function textoTendencia(pendiente, promedio){
 const NOMBRE_DIA       = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const NOMBRE_DIA_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const GRUPOS_DIA = [
-  { id:'lj', nombre:'Lunes a jueves', corto:'Lun-Jue', dias:[1,2,3,4], color:'#5EA2FF', desc:'semana de oficina' },
-  { id:'vd', nombre:'Viernes a domingo', corto:'Vie-Dom', dias:[5,6,0], color:'#FF9440', desc:'fin de semana largo' }
+  { id:'lj', nombre:'Lunes a jueves', corto:'Lun-Jue', dias:[1,2,3,4], get color(){ return paraTema('#5EA2FF'); }, desc:'semana de oficina' },
+  { id:'vd', nombre:'Viernes a domingo', corto:'Vie-Dom', dias:[5,6,0], get color(){ return paraTema('#FF9440'); }, desc:'fin de semana largo' }
 ];
 /** Día hasta el que cuenta el mes: hoy si es el mes en curso; si no, el último día */
 function diaLimite(mesKey){

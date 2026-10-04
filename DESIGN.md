@@ -176,6 +176,9 @@ Each category colour suggests what it is and is clearly different from its sibli
 **The Tell Them Apart Rule.** Two categories that can appear side by side (siblings, the stack bar, the donut) must be at least 0.10 apart in OKLab and stay distinguishable under colour-blind simulation. Measure before adding a colour.
 **The No Borrowed Lights Rule.** Category colours stay clear of the celeste accent and the three lights (OKLab distance at least 0.09).
 
+### Day mode (v20)
+Same system on iOS light surfaces: ground #F2F2F7, white cards, separators rgba(60,60,67,.16), labels #1C1C1E / #3C3C43 / #6C6C70. Inks deepen so coloured text reads on white: celeste #0B6FAE (5.4:1), green #1A7F37, amber #9A6700 for "vas justo", red #D70015, orange #C2410C. Category colours too light for white are darkened automatically until they reach 3:1 (`paraTema` in data.js). The 381 logo keeps its dark tile. The theme is set before first paint (inline script) so there is no flash, and switching crossfades colours in 350ms (instant under reduced motion).
+
 ## Typography
 
 **Titles:** SF Pro Display (system stack). **Figures:** SF Pro Rounded (`ui-rounded`), tabular numerals. **Reading:** SF Pro Text. On non-Apple devices the platform UI sans stands in. No web fonts are downloaded.
