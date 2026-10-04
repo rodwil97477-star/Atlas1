@@ -21,7 +21,7 @@ Built around his own categorisation tree (cat1 > cat2 > cat3), his bot, and his 
 ## Operating Context
 
 - Data arrives live from a Google Apps Script endpoint (`egresos`, `prestamos`, `presupuestos`); a local copy opens instantly, then refreshes.
-- Five tabs: Inicio (month total, Meta, alerts, trend, latest movements), Gastos (by category, merchant, payment method, search), Ritmo (daily rhythm, calendar, weekday/hour patterns, budget pacing), Compromisos (fixed charges, recurring detection, loans receivable), Resumen (added 2026-10: last six months, what changed, categories month by month, merchants).
+- Five tabs, one question each (reorganised 2026-10, v17): Inicio "¿cómo voy?" (one hero card with month total, Meta state, projection and Personal/Social split; alerts; latest movements; shortcuts), Presupuesto "¿me alcanza?" (state and per-day pace, month curve, categories against their budget, what the margin covers), Gastos "¿en qué, dónde, cómo y cuándo?" (search plus one row of sub-tabs: Categoría, Comercio, Pago, Días; Días holds the calendar, hours and week vs weekend), Compromisos "¿qué tengo que pagar o cobrar?" (month summary, fixed charges, recurring detection, loans receivable), Historial "¿cómo vengo?" (six-month summary, one trend chart with Meta compliance, categories month by month, what changed, merchants). Old ritmo.html and resumen.html redirect. Each piece of information lives in one place; Inicio only summarises and links.
 - Detail sheets drill into subcategory, merchant, payment method and person; budgets are edited in a "Presupuesto" sheet.
 - Currency is soles (S/), Spanish (Peru) copy, month selector shared across tabs.
 - Access gate with a device passcode.

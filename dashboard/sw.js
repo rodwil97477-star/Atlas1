@@ -1,6 +1,6 @@
-const CACHE = 'finanzas-shell-v11';
+const CACHE = 'finanzas-shell-v12';
 const SHELL = [
-  'index.html', 'gastos.html', 'ritmo.html', 'compromisos.html', 'resumen.html',
+  'index.html', 'presupuesto.html', 'gastos.html', 'compromisos.html', 'historial.html', 'ritmo.html', 'resumen.html', 'explorar.html',
   'style.css', 'data.js', 'app.js', 'manifest.json',
   'icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png',
   'fonts/anton-latin.woff2'

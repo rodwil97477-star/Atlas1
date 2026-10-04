@@ -257,8 +257,8 @@ Tabler Icons (MIT), outline, 2px stroke on a 24px grid, copied as paths into dat
 ### Logo 381
 Pixel mark: solid 6x10-cell numerals (2-cell stroke, clipped corners, 7/200 cell) in a true italic `skewX(-12)`, logo green gradient, on a ground-coloured halo. Behind them run three currents of pixel breeze gusts: each gust is nine cells that step up or down one row halfway, from a faint celeste tail to a pale-cyan head. In the header (34px) and the gate (56px) each current is its own layer that slides exactly one gust period on a slow linear loop (6.5 to 9.5s, with a gentle opacity breath); numerals never move. Only transform and opacity are animated, so the global reduced-motion rule freezes it on the same pose as the static icon. Geometry lives in `tools/logo381.py`; never redraw it by hand.
 
-### Resumen (fifth tab)
-The last six months: period total in Anton with six metric tiles, a months-by-category heat map (intensity = that category's own highest month; on phones the name sits above its row), "Qué cambió" with diverging bars (red right for increases, green left for decreases, same days of the previous month while a month is in progress) and the period's merchants.
+### Historial (fifth tab, formerly Resumen)
+The last six months, now also holding the single trend chart (curve, Meta line and a pill per month marked within/over the Meta): period total in Anton with six metric tiles, a months-by-category heat map (intensity = that category's own highest month; on phones the name sits above its row), "Qué cambió" with diverging bars (red right for increases, green left for decreases, same days of the previous month while a month is in progress) and the period's merchants.
 
 ### Data details (v16)
 Small pieces that add information, each with its own motion:

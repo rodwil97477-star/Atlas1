@@ -1,15 +1,19 @@
 /* ============================================================
    Finanzas · v7 · interfaz
-   Una sola lógica para las 4 pestañas: cada página marca
+   Una sola lógica para las 5 pestañas: cada página marca
    <body data-page="..."> y aquí se dibuja lo que corresponde.
    ============================================================ */
-const PAGINA = document.body.dataset.page || 'inicio';
+/* v17: cada pestaña responde una sola pregunta.
+   Inicio ¿cómo voy? · Presupuesto ¿me alcanza? · Gastos ¿en qué, dónde, cómo y cuándo?
+   Compromisos ¿qué tengo que pagar o cobrar? · Historial ¿cómo vengo los últimos meses?
+   Ritmo y Resumen ya no existen como pestañas: sus páginas viejas redirigen aquí. */
+const PAGINA = ({ ritmo:'presupuesto', resumen:'historial' })[document.body.dataset.page] || document.body.dataset.page || 'inicio';
 const TABS = [
   { id:'inicio', nombre:'Inicio', href:'index.html', ic:'home' },
+  { id:'presupuesto', nombre:'Presupuesto', href:'presupuesto.html', ic:'target' },
   { id:'gastos', nombre:'Gastos', href:'gastos.html', ic:'pie' },
-  { id:'ritmo', nombre:'Ritmo', href:'ritmo.html', ic:'pulse' },
   { id:'compromisos', nombre:'Compromisos', href:'compromisos.html', ic:'cal' },
-  { id:'resumen', nombre:'Resumen', href:'resumen.html', ic:'resumen' }
+  { id:'historial', nombre:'Historial', href:'historial.html', ic:'resumen' }
 ];
 let ALL = [], MESES = [], PRESTAMOS = [], MES = null, INFO = null, HOJA_PRESTAMOS = false, COMPLETO = true;
 const $ = (s, r) => (r || document).querySelector(s);
@@ -86,7 +90,7 @@ function shell(){
 function actualizarLinks(){
   $$('[data-nav]').forEach(a => {
     const base = a.getAttribute('data-nav');
-    a.setAttribute('href', base + (MES ? '?mes=' + encodeURIComponent(MES) : ''));
+    a.setAttribute('href', base + (MES ? (base.includes('?') ? '&' : '?') + 'mes=' + encodeURIComponent(MES) : ''));
   });
 }
 function elegirMes(k){
@@ -686,13 +690,8 @@ function paginaInicio(){
   const dias = diaLimite(k), dm = diasDelMes(k), actual = esMesActual(k);
   const cat1 = agrupar(gasto, r => r.cat1).map(g => ({ n: g.clave, v: g.total, color: colorDe(g.clave, 1) }));
 
-  let html = card(`
-    ${head('Gasto del mes', `<span class="chip">${actual ? `día ${dias} de ${dm}` : 'mes cerrado'}</span>`)}
-    <div class="big" id="heroNum">S/ ${fmtMonto(total)}</div>
-    <div class="chips">${deltaChip(total, totalPrev, 'vs ' + monthShort(prev))}${prom3 ? `<span class="chip">prom. 3m <b>S/ ${fmtMonto(prom3)}</b></span>` : ''}</div>
-    ${cat1.length ? stackBar(cat1) + `<div class="legend">${cat1.map(c => `<span><i style="background:${c.color}"></i>${escapeHtml(c.n)} <b>S/ ${fmtMonto(c.v)}</b></span>`).join('')}</div>` : ''}`, 'wide');
-
-  html += htmlMeta(k, total, gasto);
+  // v17: una sola tarjeta principal (antes "Gasto del mes" y "Meta" repetían cuánto llevas)
+  let html = htmlMeta(k, total, gasto, { totalPrev, prom3, cat1, prev, dias, dm, actual });
 
   const alertas = calcularAlertas(k);
   if(alertas.length){
@@ -700,21 +699,17 @@ function paginaInicio(){
       <div class="list">${alertas.map((a, i) => `<a class="row fi" style="--i:${i}" href="${a.href}${a.href.includes('?') ? '&' : '?'}mes=${k}">${`<span class="tile" style="background:${alpha(a.color, 0.12)}">${svg(a.ic, 18, a.color)}</span>`}<span class="main"><span class="name" style="white-space:normal">${a.titulo}</span><span class="sub" style="white-space:normal">${a.sub}</span></span>${chev()}</a>`).join('')}</div>`, 'tight');
   }
 
-  const meses = ventana(k, 6);
-  const vals = meses.map(totalGasto);
-  if(meses.length >= 2){
-    const tend = calcularTendencia(vals); const cd = vals.filter(v => v > 0);
-    const prom = cd.length ? cd.reduce((a, b) => a + b, 0) / cd.length : 0;
-    const tt = textoTendencia(tend.pendiente, prom);
-    html += card(`${head('Tendencia · ' + meses.length + ' meses', `<a class="more" href="ritmo.html?mes=${k}">Ver en Ritmo ${chev()}</a>`)}
-      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:20px;font-weight:700;letter-spacing:-0.02em">S/ ${fmtMonto(total)}</span><span style="font-size:12.5px;font-weight:700" class="${tt.startsWith('sub') ? 't-up' : (tt.startsWith('baj') ? 't-down' : 'muted')}">${tt}</span></div>
-      ${curvaSVG(vals, meses.map(monthShort), { meta: leerMeta(), aria: 'Gasto mensual de los últimos meses', tip: meses.map(m => monthLabel(m).replace(/^./, c => c.toUpperCase())) })}
-      <div class="legend"><span><i style="background:${TINTA.accent}"></i>gasto mensual</span><span><i class="dash"></i>tendencia</span>${leerMeta() ? `<span><i class="k-meta"></i>meta</span>` : ''}<span class="tap-hint">toca el gráfico para ver cada mes</span></div>`);
-  }
-
   const ult = filas.slice().sort((a, b) => b.fecha - a.fecha);
   html += card(`${head('Últimos movimientos', ult.length > 5 ? `<button class="more" id="verTodos">Ver los ${ult.length} ${chev()}</button>` : '')}
-    <div class="list">${ult.slice(0, 5).map(r => filaMov(r)).join('') || '<div class="empty">Sin movimientos este mes.</div>'}</div>`, 'tight wide');
+    <div class="list">${ult.slice(0, 5).map(r => filaMov(r)).join('') || '<div class="empty">Sin movimientos este mes.</div>'}</div>`, 'tight wide c-ult');
+
+  html += card(`${head('Para ver más')}
+    <div class="atajos">${[
+      ['presupuesto.html', 'target', 'Presupuesto', 'proyección y categorías'],
+      ['gastos.html?vista=dias', 'cal', 'Tus días', 'calendario y horas'],
+      ['compromisos.html', 'repeat', 'Compromisos', 'fijos y préstamos'],
+      ['historial.html', 'resumen', 'Historial', 'tendencia de 6 meses']
+    ].map(([h, ic, t, d]) => `<a class="atajo" data-nav="${h}" href="${h}${h.includes('?') ? '&' : '?'}mes=${k}">${svg(ic, 18, 'var(--accent)')}<b>${t}</b><span>${d}</span></a>`).join('')}</div>`, 'tight c-atajos');
 
   html += `<p class="note">Los montos están en soles con el tipo de cambio del mes de cada movimiento. Inversiones y préstamos (rama Finanzas) y Terceros (la parte de un gasto compartido que te deben) no cuentan como gasto: es plata por cobrar o invertida.</p>`;
   $('#app').innerHTML = html;
@@ -737,14 +732,23 @@ function categoriaDesviada(k, gasto, factor){
   });
   return peor;
 }
-function htmlMeta(k, total, gasto){
+/** v17: tarjeta principal de Inicio. Junta lo que antes eran "Gasto del mes" y "Meta de gasto":
+    el total con sus comparaciones, el estado de la meta, la proyección y el reparto Personal/Social. */
+function htmlMeta(k, total, gasto, h){
   const meta = leerMeta();
+  const dm = h.dm, actual = h.actual, dias = h.dias, rest = actual ? dm - dias : 0;
+  const cabeza = `${head('Gasto del mes', `<span class="chip">${actual ? `día ${dias} de ${dm}` : 'mes cerrado'}</span>`)}
+    <div class="big" id="heroNum">S/ ${fmtMonto(total)}</div>
+    <div class="chips">${deltaChip(total, h.totalPrev, 'vs ' + monthShort(h.prev))}${h.prom3 ? `<span class="chip">prom. 3m <b>S/ ${fmtMonto(h.prom3)}</b></span>` : ''}${dias ? `<span class="chip">S/ ${fmtMonto(total / dias)} por día</span>` : ''}</div>`;
+  const reparto = h.cat1.length ? `<div class="hero-split"><span class="block-label">En qué se fue</span>${stackBar(h.cat1)}<div class="legend">${h.cat1.map(c => `<span><i style="background:${c.color}"></i>${escapeHtml(c.n)} <b>S/ ${fmtMonto(c.v)}</b></span>`).join('')}</div></div>` : '';
   if(!meta){
-    return card(`${head('Meta de gasto')}<p class="msg" style="font-size:14px;color:var(--label-2)">Define cuánto quieres gastar al mes y te aviso cómo vas, cuánto puedes gastar por día y qué categoría se está desviando.</p>
+    return card(`${cabeza}${reparto}
+      <div class="hero-sep"></div>
+      <h2 class="sub-h">Meta de gasto</h2>
+      <p class="msg" style="font-size:14px;color:var(--label-2)">Define cuánto quieres gastar al mes y te aviso cómo vas, cuánto puedes gastar por día y qué categoría se está desviando.</p>
       <div class="form"><input id="metaIn" type="number" inputmode="decimal" placeholder="Ej. 2500" aria-label="Meta mensual en soles"><button class="btn solid" id="metaOk">Guardar</button></div>
       <button class="more" id="metaEdit">o arma tu presupuesto por categoría ${chev()}</button>`, 'wide');
   }
-  const dm = diasDelMes(k), actual = esMesActual(k), dias = diaLimite(k), rest = actual ? dm - dias : 0;
   const ritmo = dias ? total / dias : 0, proy = actual ? ritmo * dm : total, restante = meta - total, porDia = rest > 0 ? restante / rest : 0;
   let estado = 'ok', etiqueta = 'En camino';
   if(proy > meta){
@@ -755,22 +759,22 @@ function htmlMeta(k, total, gasto){
   const col = estado === 'ok' ? TINTA.ok : (estado === 'justo' ? TINTA.justo : TINTA.alto);
   let msg;
   if(!actual){
-    msg = total <= meta ? `Cerraste ${monthLabel(k)} en <b>S/ ${fmtMonto(total)}</b>, S/ ${fmtMonto(meta - total)} por debajo de tu meta.` : `Cerraste ${monthLabel(k)} en <b>S/ ${fmtMonto(total)}</b>, S/ ${fmtMonto(total - meta)} por encima de tu meta.`;
+    msg = total <= meta ? `Cerraste ${monthLabel(k)} S/ ${fmtMonto(meta - total)} por debajo de tu meta.` : `Cerraste ${monthLabel(k)} S/ ${fmtMonto(total - meta)} por encima de tu meta.`;
   } else if(restante <= 0){
     msg = `Ya pasaste tu meta de S/ ${fmtMonto(meta)} por <b>S/ ${fmtMonto(-restante)}</b>${rest ? `, y aún quedan ${rest} día${rest === 1 ? '' : 's'} del mes` : ''}.`;
   } else if(estado === 'alto'){
-    msg = `Llevas <b>S/ ${fmtMonto(total)}</b> en ${dias} día${dias === 1 ? '' : 's'}. A este ritmo cierras en <b>S/ ${fmtMonto(proy)}</b>.`;
+    msg = `A este ritmo cierras en <b>S/ ${fmtMonto(proy)}</b>, S/ ${fmtMonto(proy - meta)} sobre tu meta.`;
   } else if(estado === 'justo'){
-    msg = `Llevas <b>S/ ${fmtMonto(total)}</b> en ${dias} día${dias === 1 ? '' : 's'}. Cierras cerca de la meta, en unos S/ ${fmtMonto(proy)}.`;
+    msg = `Cierras cerca de la meta, en unos <b>S/ ${fmtMonto(proy)}</b>.`;
   } else {
-    msg = `Llevas <b>S/ ${fmtMonto(total)}</b> en ${dias} día${dias === 1 ? '' : 's'}. A este ritmo cierras en <b>S/ ${fmtMonto(proy)}</b>, bajo tu meta.`;
+    msg = `A este ritmo cierras en <b>S/ ${fmtMonto(proy)}</b>, bajo tu meta. Te quedan S/ ${fmtMonto(restante)}.`;
   }
+  const ideal = meta * dias / dm;
   const stats = actual
-    ? `<div class="metric"><span class="ml">Llevas</span><span class="mv">S/ ${fmtMonto(total)}</span></div><div class="metric"><span class="ml">Proyección</span><span class="mv" style="color:${col}">S/ ${fmtMonto(proy)}</span></div><div class="metric"><span class="ml">Quedan</span><span class="mv">${rest} día${rest === 1 ? '' : 's'}</span></div>`
-    : `<div class="metric"><span class="ml">Gastaste</span><span class="mv">S/ ${fmtMonto(total)}</span></div><div class="metric"><span class="ml">Meta</span><span class="mv">S/ ${fmtMonto(meta)}</span></div><div class="metric"><span class="ml">Diferencia</span><span class="mv" style="color:${col}">${total > meta ? '+' : '−'}S/ ${fmtMonto(Math.abs(total - meta))}</span></div>`;
-  const prev = prevKey(k);
+    ? `<div class="metric"><span class="ml">Proyección</span><span class="mv" style="color:${col}">S/ ${fmtMonto(proy)}</span></div><div class="metric"><span class="ml">Ideal a hoy</span><span class="mv">S/ ${fmtMonto(ideal)}</span></div><div class="metric"><span class="ml">Quedan</span><span class="mv">${rest} día${rest === 1 ? '' : 's'}</span></div>`
+    : `<div class="metric"><span class="ml">Meta</span><span class="mv">S/ ${fmtMonto(meta)}</span></div><div class="metric"><span class="ml">Diferencia</span><span class="mv" style="color:${col}">${total > meta ? '+' : '−'}S/ ${fmtMonto(Math.abs(total - meta))}</span></div><div class="metric"><span class="ml">Por día</span><span class="mv">S/ ${fmtMonto(total / dm)}</span></div>`;
   let comp = '';
-  if(actual){ const ant = acumuladoHastaDia(prev, dias); if(ant > 0) comp = `Al mismo día de ${MESES_LARGOS[+prev.split('-')[1] - 1]} llevabas S/ ${fmtMonto(ant)}.`; }
+  if(actual){ const ant = acumuladoHastaDia(h.prev, dias); if(ant > 0) comp = `Al mismo día de ${MESES_LARGOS[+h.prev.split('-')[1] - 1]} llevabas S/ ${fmtMonto(ant)}.`; }
   const desv = categoriaDesviada(k, gasto, actual && dias ? dm / dias : 1);
   let pace = '';
   if(actual && rest > 0){
@@ -780,9 +784,9 @@ function htmlMeta(k, total, gasto){
   }
   return card(`
     <div class="cartel st-${estado}"><b><i aria-hidden="true"></i>${etiqueta}</b><span>Meta S/ ${fmtMonto(meta)}</span></div>
+    ${cabeza}
     <h2 class="sr">Meta de gasto</h2>
     <p class="msg">${msg}</p>
-    <div class="stat3">${stats}</div>
     <div>
       <div class="meter meter-meta" role="img" aria-label="Llevas ${fmtPct(total, meta)} de la meta${actual ? `; a este ritmo cierras en ${fmtPct(proy, meta)}; el ritmo ideal a hoy es ${fmtPct(dias, dm)}` : ''}">
         ${actual && proy > total ? `<div class="ghost gx" style="width:${Math.min(proy / meta * 100, 100).toFixed(1)}%;--c:${col}"></div>` : ''}
@@ -792,10 +796,12 @@ function htmlMeta(k, total, gasto){
       <div class="scale" style="margin-top:8px"><span>${fmtPct(total, meta)} usado</span>${actual ? '' : `<span>${dm} días</span>`}<span>S/ ${fmtMonto(meta)}</span></div>
       ${actual ? `<div class="legend meter-leg"><span><i style="background:${col}"></i>llevas</span>${proy > total ? `<span><i class="k-ghost" style="--c:${col}"></i>cierre: <b>${fmtPct(proy, meta)}</b></span>` : ''}<span><i class="k-mark"></i>ideal hoy (día ${dias})</span></div>` : ''}
     </div>
+    <div class="stat3">${stats}</div>
     ${comp ? `<div class="hint" style="font-size:13px">${comp}</div>` : ''}
     ${desv ? `<div class="flag">${tile(desv.cat, colorDe(desv.cat, 2), true)}<span><b>${escapeHtml(desv.cat)}</b> ${actual ? 'proyecta' : 'cerró en'} S/ ${fmtMonto(desv.proy)} cuando tu promedio es S/ ${fmtMonto(desv.prom)}.</span></div>` : ''}
     ${pace}
-    <button class="btn" id="metaEdit">${svg('pencil', 15)}Gestionar presupuesto</button>`, 'wide');
+    ${reparto}
+    <div class="hero-acc"><button class="btn" id="metaEdit">${svg('pencil', 15)}Gestionar presupuesto</button><a class="btn ghost" data-nav="presupuesto.html" href="presupuesto.html?mes=${k}">Ver presupuesto ${chev()}</a></div>`, 'wide');
 }
 function enlazarMeta(k, total, gasto){
   const guardar = () => {
@@ -824,7 +830,7 @@ function calcularAlertas(k){
     const gastado = suma(gasto.filter(r => (r.cat2 || '(sin definir)') === cat2));
     if(gastado > monto && (!peorPresu || gastado - monto > peorPresu.exceso)) peorPresu = { cat2, monto, gastado, exceso: gastado - monto };
   });
-  if(peorPresu) out.push({ tipo:'presupuesto', ic:'target', color:TINTA.alto, href:'gastos.html?vista=cat',
+  if(peorPresu) out.push({ tipo:'presupuesto', ic:'target', color:TINTA.alto, href:'presupuesto.html',
     titulo: `${escapeHtml(peorPresu.cat2)} superó su presupuesto`,
     sub: `S/ ${fmtMonto(peorPresu.gastado)} de S/ ${fmtMonto(peorPresu.monto)} este mes` });
   // 1) cambios de precio en cobros recurrentes
@@ -846,7 +852,7 @@ function calcularAlertas(k){
       const b = suma(filasMes(prev).filter(r => esGastoReal(r) && g.dias.includes(r.fecha.getDay()))) / Math.max(1, contarDias(prev, g.dias));
       if(a > 0 && b > 0){ const v = (a - b) / b; if(Math.abs(v) >= 0.15 && (!mejor || Math.abs(v) > Math.abs(mejor.v))) mejor = { g, a, b, v }; }
     });
-    if(mejor) out.push({ tipo:'grupo', ic: mejor.v > 0 ? 'up' : 'downtrend', color: mejor.v > 0 ? mejor.g.color : TINTA.ok, href:'ritmo.html',
+    if(mejor) out.push({ tipo:'grupo', ic: mejor.v > 0 ? 'up' : 'downtrend', color: mejor.v > 0 ? mejor.g.color : TINTA.ok, href:'gastos.html?vista=dias',
       titulo: `Tu ${mejor.g.id === 'vd' ? 'fin de semana' : 'semana'} ${mejor.v > 0 ? 'subió' : 'bajó'} ${Math.round(Math.abs(mejor.v) * 100)}%`,
       sub: `${mejor.g.corto} promedia S/ ${fmtMonto(mejor.a)} por día; en ${MESES_LARGOS[+prev.split('-')[1] - 1]} eran S/ ${fmtMonto(mejor.b)}` });
   }
@@ -868,7 +874,7 @@ function calcularAlertas(k){
 /* ============================================================
    GASTOS
    ============================================================ */
-const VISTAS = [['cat', 'Categoría'], ['com', 'Comercio'], ['med', 'Medio de pago']];
+const VISTAS = [['cat', 'Categoría'], ['com', 'Comercio'], ['med', 'Pago'], ['dias', 'Días']];
 let VISTA = null, BUSQ = '';
 function segHTML(id, opciones, activa, etiqueta){
   const i = Math.max(0, opciones.findIndex(o => o[0] === activa));
@@ -912,10 +918,13 @@ function dibujarVista(cambio){
   const cont = $('#gVista'); if(!cont) return;
   const k = MES, filas = filasMes(k);
   let html = '';
+  let wire = null;
   if(VISTA === 'cat') html = vistaCategorias(k, filas);
   else if(VISTA === 'com') html = vistaComercios(k, filas);
-  else html = vistaMedios(k, filas);
+  else if(VISTA === 'med') html = vistaMedios(k, filas);
+  else { const r = vistaRitmoActividad(k); html = r.html; wire = r.wire; }
   cont.innerHTML = html;
+  if(wire) wire();
   if(cambio) $$('.anim', cont).forEach(e => { e.classList.add('in'); e.classList.add('view-in'); });
   const donutTotal = $('#donutTotal', cont);
   if(donutTotal) contar(donutTotal, suma(filas), v => 'S/ ' + fmtCorto(v));
@@ -940,18 +949,16 @@ function vistaCategorias(k, filas){
       const presu = presus[g.clave];
       const antes = suma(filasPrev.filter(r => r.cat1 === g1.clave && (r.cat2 || '(sin definir)') === g.clave));
       const dt = deltaTxt(g.total, antes);
-      const pct = presu ? Math.min(g.total / presu * 100, 100) : (g.total / maxC2 * 100);
-      const sobrePresu = presu && g.total >= presu;
-      const barCol = !presu ? col : (sobrePresu ? TINTA.alto : (g.total >= presu * 0.9 ? TINTA.justo : TINTA.ok));   // v16: con presupuesto, la barra es semáforo
-      const sub = presu
-        ? `<span class="sub" style="color:${sobrePresu ? TINTA.alto : 'var(--label-3)'};font-weight:${sobrePresu ? 700 : 500}">S/ ${fmtMonto(g.total)} de S/ ${fmtMonto(presu)}</span>`
-        : `<span class="sub">${g.n} mov.${dt ? ' · ' + dt : ''}</span>`;
-      return `<button class="row" data-c1="${escapeHtml(g1.clave)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, col)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span>${sub}<span class="track row-track"><span class="gx" style="--i:${i};width:${pct.toFixed(1)}%;background:${barCol}"></span>${presu ? marcaRitmo(k, i) : ''}</span></span><span class="amt" style="min-width:56px;text-align:right">S/ ${fmtMonto(g.total)}</span>${chev()}</button>`;
+      // v17: aquí la barra es solo el tamaño de cada subcategoría; el semáforo del presupuesto vive en la pestaña Presupuesto
+      const pct = g.total / maxC2 * 100;
+      const sobrePresu = presu && g.total > presu;
+      const sub = `<span class="sub">${g.n} mov.${dt ? ' · ' + dt : ''}${presu ? ` · <span style="color:${sobrePresu ? TINTA.alto : 'inherit'};font-weight:${sobrePresu ? 700 : 500}">presup. S/ ${fmtMonto(presu)}</span>` : ''}</span>`;
+      return `<button class="row" data-c1="${escapeHtml(g1.clave)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, col)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span>${sub}<span class="track row-track"><span class="gx" style="--i:${i};width:${pct.toFixed(1)}%;background:${col}"></span></span></span><span class="amt" style="min-width:56px;text-align:right">S/ ${fmtMonto(g.total)}</span>${chev()}</button>`;
     }).join('') + '</div>';
     subs += `<div class="cat-group">${grupo}</div>`;
   });
   return card(`${head('Reparto por categoría', `<span class="hint">${c1.length} categoría${c1.length === 1 ? '' : 's'}</span>`)}<div class="donut-row">${donutSVG(partes, 'S/ ' + fmtCorto(total), null, 'donutTotal')}${leyenda(partes)}</div><span class="tap-hint hint">toca una categoría para verla en la dona</span>`, 'wide')
-       + card(`${head('Subcategorías', '<span class="hint hint-tap">toca para ver el detalle</span>')}${Object.keys(presus).length ? leyendaRitmo(k) : ''}<div class="sub-cols">${subs}</div>`, 'tight wide');
+       + card(`${head('Subcategorías', Object.keys(presus).length ? `<a class="more" data-nav="presupuesto.html" href="presupuesto.html?mes=${k}">Ver presupuesto ${chev()}</a>` : '<span class="hint hint-tap">toca para ver el detalle</span>')}<div class="sub-cols">${subs}</div>`, 'tight wide');
 }
 let _comFilas = [];
 function vistaComercios(k, filas){
@@ -1067,46 +1074,11 @@ function promedioDiaSemana(k){
   for(let d = 1; d <= lim; d++){ const wd = new Date(y, m - 1, d).getDay(); s[wd] += v[d]; n[wd]++; }
   return s.map((x, i) => n[i] ? x / n[i] : 0);
 }
-const VISTAS_RITMO = [['ritmo', 'Ritmo'], ['presu', 'Presupuesto']];
-let VISTA_RITMO = null;
-function paginaRitmo(){
-  if(!VISTA_RITMO){
-    let v = null; try{ v = new URLSearchParams(location.search).get('vista'); }catch(e){}
-    VISTA_RITMO = VISTAS_RITMO.some(x => x[0] === v) ? v : (lsGet('finanzas_vista_ritmo') || 'ritmo');
-  }
-  $('#app').innerHTML = `
-    <section class="anim" style="display:flex;flex-direction:column;gap:10px">
-      ${segHTML('vistaRitmo', VISTAS_RITMO, VISTA_RITMO, 'Ver ritmo por')}
-    </section>
-    <div id="rVista"></div>`;
-  dibujarVistaRitmo(false);
-  enlazarSeg('vistaRitmo', v => { VISTA_RITMO = v; lsSet('finanzas_vista_ritmo', v); dibujarVistaRitmo(true); });
-}
-function dibujarVistaRitmo(cambio){
-  const cont = $('#rVista'); if(!cont) return;
-  const k = MES;
-  if(VISTA_RITMO === 'presu'){
-    cont.innerHTML = vistaRitmoPresupuesto(k);
-    if(cambio) $$('.anim', cont).forEach(e => { e.classList.add('in'); e.classList.add('view-in'); });
-    enlazarRitmoPresupuesto(cont, k);
-  } else {
-    const r = vistaRitmoActividad(k);
-    cont.innerHTML = r.html;
-    if(cambio) $$('.anim', cont).forEach(e => { e.classList.add('in'); e.classList.add('view-in'); });
-    r.wire();
-  }
-  activarAnimaciones(document.body.classList.contains('quiet'));
-  ajustarTextoGraficos(cont); activarScrub(cont);
-}
+/** v17: Gastos > Días. Cuándo gastas: calendario, semana y fin de semana, y horas (antes la pestaña Ritmo). */
 function vistaRitmoActividad(k){
   const prev = prevKey(k), dm = diasDelMes(k), lim = diaLimite(k), actual = esMesActual(k);
-  const total = totalGasto(k), prom = lim ? total / lim : 0;
-  const promPrev = totalGasto(prev) / diasDelMes(prev);
   const meta = leerMeta(), metaDia = meta ? meta / dm : null;
-  let chips = '';
-  if(metaDia){ chips += `<span class="chip">meta S/ ${fmtMonto(metaDia)} por día</span>`; const dif = prom - metaDia; chips += `<span class="chip ${dif > 0 ? 'up' : 'down'}">${flecha(dif > 0)} S/ ${fmtMonto(Math.abs(dif))} ${dif > 0 ? 'sobre' : 'bajo'} la meta</span>`; }
-  chips += deltaChip(prom, promPrev > 0 ? promPrev : null, 'vs ' + monthShort(prev));
-  let html = card(`${head('Gasto promedio por día', `<span class="chip">${actual ? lim + ' días' : 'mes completo'}</span>`)}<div class="big" id="heroNum">S/ ${fmtMonto(prom)}</div><div class="chips">${chips}</div>`, 'wide');
+  let html = '';
 
   /* calendario */
   const pd = porDia(k);
@@ -1128,14 +1100,6 @@ function vistaRitmoActividad(k){
     <div class="cal">${cal}</div>
     <div class="cal-legend"><span class="sc">menos${AL.map(a => `<i style="background:${alpha(TINTA.accent, a)}"></i>`).join('')}más</span>${pd.v[dMax] > 0 ? `<span>Día más alto: <b style="color:var(--label)">${NOMBRE_DIA[new Date(pd.y, pd.m - 1, dMax).getDay()]} ${dMax} · S/ ${fmtMonto(pd.v[dMax])}</b></span>` : ''}</div>
     <div class="daybox" id="dayBox" aria-live="polite"></div>`, 'wide cal-card');
-
-  /* días de la semana */
-  const pds = promedioDiaSemana(k);
-  const orden = [1,2,3,4,5,6,0];
-  const items = orden.map(wd => { const g = GRUPOS_DIA.find(x => x.dias.includes(wd)); return { v: pds[wd], label: NOMBRE_DIA_CORTO[wd], color: g.color, txt: fmtMonto(pds[wd]) }; });
-  html += card(`${head('Promedio por día de la semana', `<span class="hint">${monthShort(k)}</span>`)}
-    ${barrasV(items, 170, { meta: metaDia })}
-    <div class="legend">${GRUPOS_DIA.map(g => `<span><i style="background:${g.color}"></i>${g.nombre}</span>`).join('')}${metaDia ? `<span><i class="dash dash-meta"></i>meta S/ ${fmtMonto(metaDia)}</span>` : ''}</div>`);
 
   /* hora del día */
   const FR = [['Madrugada', '0-6', 0, 6], ['Mañana', '6-12', 6, 12], ['Mediodía', '12-15', 12, 15], ['Tarde', '15-19', 15, 19], ['Noche', '19-24', 19, 24]];
@@ -1159,13 +1123,18 @@ function vistaRitmoActividad(k){
   });
   const maxP = Math.max(...gdat.map(x => x.prom), 1);
   const ratio = gdat[0].prom > 0 ? gdat[1].prom / gdat[0].prom : 0;
-  html += card(`${head('Semana vs fin de semana')}
+  const pds = promedioDiaSemana(k);
+  const orden = [1,2,3,4,5,6,0];
+  const items = orden.map(wd => { const g = GRUPOS_DIA.find(x => x.dias.includes(wd)); return { v: pds[wd], label: NOMBRE_DIA_CORTO[wd], color: g.color, txt: fmtMonto(pds[wd]) }; });
+  const wdTop = orden.reduce((a, wd) => pds[wd] > pds[a] ? wd : a, orden[0]);
+  html += card(`${head('Semana y fin de semana', `<span class="hint">promedio por día · ${monthShort(k)}</span>`)}
+    ${barrasV(items, 170, { meta: metaDia })}
+    <div class="legend">${GRUPOS_DIA.map(g => `<span><i style="background:${g.color}"></i>${g.nombre}</span>`).join('')}${metaDia ? `<span><i class="dash dash-meta"></i>meta S/ ${fmtMonto(metaDia)}</span>` : ''}</div>
     <div class="vs">${gdat.map((x, i) => `<div class="r"><span class="l">${x.g.corto}</span><span class="t"><span class="gx" style="--i:${i};width:${(x.prom / maxP * 100).toFixed(1)}%;background:${x.g.color}"></span></span><span class="v">S/ ${fmtMonto(x.prom)}</span></div>`).join('')}
-      <span class="hint">promedio por día${ratio > 1.05 ? ` · el fin de semana gastas ${ratio.toFixed(1)} veces más` : (ratio > 0 && ratio < 0.95 ? ' · el fin de semana gastas menos' : '')}</span></div>
+      <span class="hint">promedio por día${ratio > 1.05 ? ` · el fin de semana gastas ${ratio.toFixed(1)} veces más` : (ratio > 0 && ratio < 0.95 ? ' · el fin de semana gastas menos' : '')}${pds[wdTop] > 0 ? ` · tu día más caro es el ${NOMBRE_DIA[wdTop]}` : ''}</span></div>
     ${segHTML('grupo', GRUPOS_DIA.map(g => [g.id, g.corto]), GRUPO, 'Grupo de días')}
     <div id="grupoBox"></div>`, 'wide');
   const wire = () => {
-  contar($('#heroNum'), prom);
   const pintarDia = () => {
     $$('.cal .d[data-dia]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.dia === DIA_SEL)));
     const d = DIA_SEL, wd = new Date(pd.y, pd.m - 1, d).getDay(), v = pd.v[d], avg = pds[wd];
@@ -1225,24 +1194,46 @@ function ritmoPresupuestoSVG(dm, lim, cumActual, meta, alto){
     nc: meta ? dd.map(d => (cumActual[d] || 0) > meta * d / dm ? 't-up' : 't-down') : null };
   return `<div class="chart" data-scrub="${escapeHtml(JSON.stringify(scrub))}">${s}</div>`;
 }
-function vistaRitmoPresupuesto(k){
+/* ============================================================
+   PRESUPUESTO (v17) · ¿me alcanza?
+   Todo lo de la meta vive aquí: el estado y el ritmo por día, la curva del mes,
+   cada categoría contra su presupuesto y lo que cubre el margen.
+   ============================================================ */
+function paginaPresupuesto(){
+  const k = MES;
+  $('#app').innerHTML = htmlPresupuesto(k);
+  enlazarRitmoPresupuesto($('#app'), k);
+}
+function htmlPresupuesto(k){
   const meta = leerMeta();
+  const dm = diasDelMes(k), lim = diaLimite(k), actual = esMesActual(k), prev = prevKey(k);
+  const total = totalGasto(k), prom = lim ? total / lim : 0;
+  const promPrev = totalGasto(prev) / diasDelMes(prev);
   if(!meta){
-    return card(`${head('Presupuesto')}
-      <p class="msg" style="font-size:14px;color:var(--label-2)">Todavía no configuras un presupuesto. Arma uno por categoría (o un margen general) para ver aquí tu cumplimiento mes a mes y tu ritmo de gasto contra tu meta.</p>
+    return card(`${head('Gasto promedio por día', `<span class="chip">${actual ? lim + ' días' : 'mes completo'}</span>`)}<div class="big" id="presuHeroNum" data-v="${prom}">S/ ${fmtMonto(prom)}</div><div class="chips">${deltaChip(prom, promPrev > 0 ? promPrev : null, 'vs ' + monthShort(prev))}</div>`, 'wide')
+      + card(`${head('Presupuesto')}
+      <p class="msg" style="font-size:14px;color:var(--label-2)">Todavía no configuras un presupuesto. Arma uno por categoría (o un margen general) para ver aquí tu ritmo de gasto contra tu meta y cuánto puedes gastar por día.</p>
       <button class="btn solid" id="ritmoPresuCta">${svg('target', 15)}Configurar presupuesto</button>`, 'wide');
   }
-  const dm = diasDelMes(k), lim = diaLimite(k), actual = esMesActual(k);
-  const total = totalGasto(k), metaDia = meta / dm;
-  const ritmoActual = lim ? total / lim : 0, dif = ritmoActual - metaDia;
+  const metaDia = meta / dm, rest = actual ? dm - lim : 0;
+  const dif = prom - metaDia;
   const proy = actual && lim ? total / lim * dm : total;
   const estado = proy > meta ? 'alto' : (proy > meta * 0.9 ? 'justo' : 'ok');
   const etiqueta = estado === 'ok' ? 'En camino' : estado === 'justo' ? 'Vas justo' : (!actual ? 'Te pasaste' : (total >= meta ? 'Ya te pasaste' : 'Vas a pasarte'));
+  const col = estado === 'ok' ? TINTA.ok : (estado === 'justo' ? TINTA.justo : TINTA.alto);
+  const queda = meta - total, porDiaResto = rest > 0 && queda > 0 ? queda / rest : 0;
 
   let html = card(`<div class="cartel st-${estado}"><b><i aria-hidden="true"></i>${etiqueta}</b><span>${actual ? `día ${lim} de ${dm}` : 'mes cerrado'}</span></div>
-    ${head('Presupuesto')}
-    <div class="big" id="presuHeroNum">S/ ${fmtMonto(total)}</div>
-    <div class="chips"><span class="chip">de S/ ${fmtMonto(meta)}</span><span class="chip">ritmo ideal S/ ${fmtMonto(metaDia)}/día</span><span class="chip ${dif > 0 ? 'up' : 'down'}">${flecha(dif > 0)} S/ ${fmtMonto(Math.abs(dif))}/día ${dif > 0 ? 'sobre' : 'bajo'} tu ritmo ideal</span></div>`, 'wide');
+    ${head('Gastado del presupuesto')}
+    <div class="big" id="presuHeroNum" data-v="${total}">S/ ${fmtMonto(total)}</div>
+    <div class="chips"><span class="chip">de S/ ${fmtMonto(meta)}</span><span class="chip">${fmtPct(total, meta)} usado</span>${actual ? `<span class="chip" style="color:${col}">cierre ~S/ ${fmtMonto(proy)}</span>` : ''}</div>
+    <div class="metrics">
+      <div class="metric"><span class="ml">Promedio por día</span><span class="mv">S/ ${fmtMonto(prom)}</span><span class="ms">${promPrev > 0 ? deltaTxt(prom, promPrev) + ' vs ' + monthShort(prev) : (actual ? lim + ' días' : 'mes completo')}</span></div>
+      <div class="metric"><span class="ml">Ritmo ideal</span><span class="mv">S/ ${fmtMonto(metaDia)}</span><span class="ms">por día</span></div>
+      <div class="metric"><span class="ml">${dif > 0 ? 'Sobre' : 'Bajo'} tu ritmo</span><span class="mv ${dif > 0 ? 't-up' : 't-down'}">S/ ${fmtMonto(Math.abs(dif))}</span><span class="ms">por día</span></div>
+      <div class="metric"><span class="ml">${actual ? (queda > 0 ? 'Puedes gastar' : 'Te pasaste') : (queda >= 0 ? 'Te sobró' : 'Te pasaste')}</span><span class="mv" style="color:${queda > 0 ? 'var(--label)' : TINTA.alto}">S/ ${fmtMonto(actual && queda > 0 && rest ? porDiaResto : Math.abs(queda))}</span><span class="ms">${actual && queda > 0 && rest ? `por día los ${rest} día${rest === 1 ? '' : 's'} que quedan` : 'en el mes'}</span></div>
+    </div>
+    <button class="btn" id="presuGestionar">${svg('pencil', 15)}Gestionar presupuesto</button>`, 'wide');
 
   /* ritmo del mes: gasto acumulado día a día vs una línea recta hacia la meta */
   const pd = porDia(k);
@@ -1257,44 +1248,47 @@ function vistaRitmoPresupuesto(k){
       : (total > meta ? `Cerraste S/ ${fmtMonto(total - meta)} sobre tu meta.` : `Cerraste S/ ${fmtMonto(meta - total)} bajo tu meta.`)}</p>`);
 
   /* categorías con presupuesto propio: cuáles están más cerca de pasarse este mes */
-  const presus = leerPresupuestosCat(), claves = Object.keys(presus);
+  const presus = leerPresupuestosCat(), claves = Object.keys(presus).filter(c => presus[c]);
+  const filas = filasMes(k).filter(esGastoReal);
   if(claves.length){
-    const filas = filasMes(k).filter(esGastoReal);
     const filasCat = claves.map(c2 => {
       const gastado = suma(filas.filter(r => (r.cat2 || '(sin definir)') === c2));
       const presu = presus[c2];
       return { c2, gastado, presu, pct: presu ? gastado / presu * 100 : 0 };
     }).sort((a, b) => b.pct - a.pct);
-    html += card(`${head('Categorías con presupuesto', '<span class="hint hint-tap">toca para ver el detalle</span>')}${leyendaRitmo(k)}
+    const sobre = filasCat.filter(f => f.gastado > f.presu).length;
+    html += card(`${head('Categorías con presupuesto', `<span class="hint">${sobre ? `${sobre} pasada${sobre === 1 ? '' : 's'}` : 'toca para ver el detalle'}</span>`)}${leyendaRitmo(k)}
       <div class="list">${filasCat.map((f, i) => {
-        const col = colorDe(f.c2, 2), sobre = f.gastado >= f.presu;
-        const barCol = sobre ? TINTA.alto : (f.gastado >= f.presu * 0.9 ? TINTA.justo : TINTA.ok);
-        return `<button class="row" data-abrir-cat2="${escapeHtml(f.c2)}">${tile(f.c2, col)}<span class="main"><span class="name">${escapeHtml(f.c2)}</span><span class="sub" style="color:${sobre ? TINTA.alto : 'var(--label-3)'};font-weight:${sobre ? 700 : 500}">S/ ${fmtMonto(f.gastado)} de S/ ${fmtMonto(f.presu)}</span><span class="track row-track"><span class="gx" style="--i:${i};width:${Math.min(f.pct, 100).toFixed(1)}%;background:${barCol}"></span>${marcaRitmo(k, i)}</span></span><span class="amt" style="min-width:44px;text-align:right">${f.pct.toFixed(0)}%</span>${chev()}</button>`;
+        const col2 = colorDe(f.c2, 2), pasada = f.gastado >= f.presu;
+        const barCol = pasada ? TINTA.alto : (f.gastado >= f.presu * 0.9 ? TINTA.justo : TINTA.ok);
+        const resto = f.presu - f.gastado;
+        return `<button class="row" data-abrir-cat2="${escapeHtml(f.c2)}">${tile(f.c2, col2)}<span class="main"><span class="name">${escapeHtml(f.c2)}</span><span class="sub" style="color:${pasada ? TINTA.alto : 'var(--label-3)'};font-weight:${pasada ? 700 : 500}">S/ ${fmtMonto(f.gastado)} de S/ ${fmtMonto(f.presu)} · ${resto >= 0 ? `quedan S/ ${fmtMonto(resto)}` : `S/ ${fmtMonto(-resto)} de más`}</span><span class="track row-track"><span class="gx" style="--i:${i};width:${Math.min(f.pct, 100).toFixed(1)}%;background:${barCol}"></span>${marcaRitmo(k, i)}</span></span><span class="amt" style="min-width:44px;text-align:right">${f.pct.toFixed(0)}%</span>${chev()}</button>`;
       }).join('')}</div>`, 'tight');
   }
 
-  /* cumplimiento de meta: últimos meses, comparados contra la meta de hoy
-     (se omite con menos de 2 meses de historia, igual que la Tendencia de Inicio) */
-  const meses6 = ventana(k, 6);
-  if(meses6.length >= 2){
-    const totales = meses6.map(totalGasto);
-    const dentro = totales.filter(t => t <= meta).length;
-    const items = meses6.map((m, i) => {
-      const on = i === meses6.length - 1, sobre = totales[i] > meta, base = sobre ? TINTA.alto : TINTA.ok;
-      return { v: totales[i], label: monthShort(m), txt: fmtCorto(totales[i]), on, color: on ? base : alpha(base, 0.35) };
-    });
-    html += card(`${head('Cumplimiento de meta', `<span class="hint">${dentro} de ${meses6.length} mes${meses6.length === 1 ? '' : 'es'}</span>`)}
-      ${barrasV(items, 150, { meta })}
-      <div class="legend"><span><i style="background:${TINTA.ok}"></i>bajo la meta</span><span><i style="background:${TINTA.alto}"></i>sobre la meta</span><span><i class="dash dash-meta"></i>meta S/ ${fmtCorto(meta)}</span></div>`, 'wide');
+  /* v17: lo que no tiene presupuesto propio se paga con el margen: cuánto del margen ya se usó y en qué */
+  const margen = leerMargen();
+  const libres = agrupar(filas.filter(r => !presus[r.cat2 || '(sin definir)']), r => r.cat2 || '(sin definir)');
+  if(libres.length || margen){
+    const usado = suma(libres.flatMap(g => g.filas)), pctM = margen ? usado / margen * 100 : 0;
+    const cM = !margen ? TINTA.neutro : (usado > margen ? TINTA.alto : (usado > margen * 0.9 ? TINTA.justo : TINTA.ok));
+    html += card(`${head('Margen', `<span class="hint">lo que no tiene presupuesto propio</span>`)}
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="mid">S/ ${fmtMonto(usado)}</span><span class="hint">${margen ? `de S/ ${fmtMonto(margen)} de margen · ${usado > margen ? `S/ ${fmtMonto(usado - margen)} de más` : `quedan S/ ${fmtMonto(margen - usado)}`}` : 'sin margen definido'}</span></div>
+      ${margen ? `<div class="track" style="height:8px;border-radius:4px"><span class="gx" style="width:${Math.min(pctM, 100).toFixed(1)}%;background:${cM}"></span></div>` : ''}
+      <div class="list">${libres.slice(0, 6).map(g => { const r0 = g.filas[0]; return `<button class="row" data-c1="${escapeHtml(r0.cat1)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, colorDe(g.clave, 2), true)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} mov.</span></span><span class="amt">S/ ${fmtMonto(g.total)}</span>${chev()}</button>`; }).join('') || '<div class="empty">Todo tu gasto tiene presupuesto propio.</div>'}</div>`, 'tight');
   }
 
-  html += `<p class="note">Tu meta es la suma de tus presupuestos por categoría más tu margen. El gasto histórico se compara contra la meta de hoy, no la que tenías configurada en ese momento.</p>`;
+  html += `<p class="note">Tu meta es la suma de tus presupuestos por categoría más tu margen. Para ver cómo te fue contra la meta en los meses anteriores, abre <a href="historial.html?mes=${k}" data-nav="historial.html">Historial</a>.</p>`;
   return html;
 }
 function enlazarRitmoPresupuesto(cont, k){
   const cta = $('#ritmoPresuCta', cont);
   if(cta) cta.addEventListener('click', abrirPresupuestoGeneral);
-  contar($('#presuHeroNum', cont), totalGasto(k));
+  const ges = $('#presuGestionar', cont);
+  if(ges) ges.addEventListener('click', abrirPresupuestoGeneral);
+  const hn = $('#presuHeroNum', cont);
+  if(hn) contar(hn, +hn.dataset.v);
+  $$('[data-c2]', cont).forEach(b => b.addEventListener('click', () => abrirCat2(b.dataset.c1, b.dataset.c2)));
   $$('[data-abrir-cat2]', cont).forEach(b => b.addEventListener('click', () => {
     const c2 = b.dataset.abrirCat2, f = ALL.find(r => (r.cat2 || '(sin definir)') === c2);
     if(f) abrirCat2(f.cat1, c2);
@@ -1354,11 +1348,12 @@ function paginaCompromisos(){
   const inv = filas.filter(r => r.cat2 === 'Inversiones y Ahorro'), pres = filas.filter(r => r.cat2 === 'Préstamos' || r.cat1 === 'Terceros');
   let html = card(`${head('Este mes', `<span class="hint">${monthLabel(k)}</span>`)}
     <div class="metrics">
-      <div class="metric"><span class="ml">Gastos fijos</span><span class="mv" id="mFijos">S/ ${fmtMonto(sPag)}</span><span class="ms">${pag.length} de ${fijos.length} pagados</span></div>
+      <div class="metric"><span class="ml">Gastos fijos pagados</span><span class="mv" id="mFijos">S/ ${fmtMonto(sPag)}</span><span class="ms">${pag.length} de ${fijos.length}${sPend > 0 ? ` · S/ ${fmtMonto(sPend)} por pagar` : ''}</span></div>
       <div class="metric"><span class="ml">Por cobrar</span><span class="mv" id="mCobrar">S/ ${fmtMonto(porCobrar)}</span><span class="ms">${grupos.length} persona${grupos.length === 1 ? '' : 's'}</span></div>
-      <div class="metric"><span class="ml">Invertido</span><span class="mv" id="mInv">S/ ${fmtMonto(suma(inv))}</span><span class="ms">${inv.length} movimiento${inv.length === 1 ? '' : 's'}</span></div>
-      <div class="metric"><span class="ml">Prestado</span><span class="mv" id="mPres">S/ ${fmtMonto(suma(pres))}</span><span class="ms">${pres.length} movimiento${pres.length === 1 ? '' : 's'}</span></div>
-    </div>`, 'wide');
+      <div class="metric"><span class="ml">Invertido y ahorrado</span><span class="mv" id="mInv">S/ ${fmtMonto(suma(inv))}</span><span class="ms">${inv.length} movimiento${inv.length === 1 ? '' : 's'}</span></div>
+      <div class="metric"><span class="ml">Prestado</span><span class="mv" id="mPres">S/ ${fmtMonto(suma(pres))}</span><span class="ms">${pres.length} movimiento${pres.length === 1 ? '' : 's'} · incluye compartidos</span></div>
+    </div>
+    <p class="hint" style="margin:0">Lo invertido y lo prestado no cuenta como gasto: es plata que sigue siendo tuya o que te van a devolver.</p>`, 'wide');
 
   if(fijos.length){
     const pct = sPag + sPend > 0 ? sPag / (sPag + sPend) * 100 : 0;
@@ -1385,11 +1380,6 @@ function paginaCompromisos(){
       ${!HOJA_PRESTAMOS ? '<span class="hint">Calculado desde tus egresos: los abonos se ven cuando la hoja Prestamos tiene datos.</span>' : ''}`);
   }
 
-  html += card(`${head('Finanzas del mes', '<span class="hint">solo montos registrados</span>')}
-    <div class="list">
-      <div class="row">${tile('Inversiones y Ahorro', colorDe('Inversiones y Ahorro', 2))}<span class="main"><span class="name">Inversiones y ahorro</span><span class="sub">${inv.length} movimiento${inv.length === 1 ? '' : 's'}</span></span><span class="amt">S/ ${fmtMonto(suma(inv))}</span></div>
-      <div class="row">${tile('Préstamos', colorDe('Préstamos', 2))}<span class="main"><span class="name">Préstamos</span><span class="sub">${pres.length} movimiento${pres.length === 1 ? '' : 's'} · incluye compartidos</span></span><span class="amt">S/ ${fmtMonto(suma(pres))}</span></div>
-    </div>`, 'tight');
   $('#app').innerHTML = html;
   contar($('#cobrarNum'), porCobrar);
   $$('[data-persona]').forEach(b => b.addEventListener('click', () => abrirPersonaPrestamos(b.dataset.persona)));
@@ -1487,15 +1477,16 @@ function abrirPersonaPrestamos(clave){
 }
 
 /* ============================================================
-   RESUMEN (v15) · los últimos meses de un vistazo
+   HISTORIAL (antes Resumen) · los últimos meses de un vistazo
+   v17: la tendencia (antes en Inicio) y el cumplimiento de meta (antes en Ritmo) viven aquí, en un solo gráfico.
    Panorama del periodo, qué cambió contra el mes anterior (mismos
    días si el mes está en curso), categorías mes a mes y comercios.
    ============================================================ */
 function kCorto(v){ return v >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : fmtMonto(v); }
-function paginaResumen(){
+function paginaHistorial(){
   const k = MES, meses = ventana(k, 6), actual = esMesActual(k), lim = diaLimite(k);
   if(meses.length < 2){
-    $('#app').innerHTML = card(`${head('Resumen')}<div class="empty">El resumen compara meses: aparece cuando tengas al menos 2 meses con movimientos.</div>`, 'wide');
+    $('#app').innerHTML = card(`${head('Historial')}<div class="empty">El historial compara meses: aparece cuando tengas al menos 2 meses con movimientos.</div>`, 'wide');
     return;
   }
   const filasP = ALL.filter(r => esGastoReal(r) && meses.includes(monthKey(r.fecha)));
@@ -1519,6 +1510,19 @@ function paginaResumen(){
       ${meta ? `<div class="metric"><span class="ml">Dentro de la meta</span><span class="mv ${dentro === cerr.length ? 't-down' : (dentro === 0 ? 't-up' : '')}">${dentro} de ${cerr.length}</span><span class="ms">meta S/ ${fmtMonto(meta)}</span></div>` : ''}
       <div class="metric"><span class="ml">Movimientos</span><span class="mv">${filasP.length}</span><span class="ms">ticket prom. S/ ${fmt1(filasP.length ? total / filasP.length : 0)}</span></div>
     </div>`, 'wide');
+
+  /* tendencia + cumplimiento de meta: un solo gráfico con la curva, la línea de meta y cada mes marcado */
+  {
+    const tend = calcularTendencia(totales), cd = totales.filter(v => v > 0);
+    const promT = cd.length ? cd.reduce((a, b) => a + b, 0) / cd.length : 0;
+    const tt = textoTendencia(tend.pendiente, promT);
+    html += card(`${head('Tendencia', meta && cerr.length ? `<span class="hint">meta cumplida ${dentro} de ${cerr.length} mes${cerr.length === 1 ? '' : 'es'} cerrado${cerr.length === 1 ? '' : 's'}</span>` : `<span class="hint">${meses.length} meses</span>`)}
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:20px;font-weight:700;letter-spacing:-0.02em">S/ ${fmtMonto(totales[totales.length - 1])}</span><span class="hint">${monthShort(k)}${actual ? ' (en curso)' : ''}</span><span style="font-size:12.5px;font-weight:700" class="${tt.startsWith('sub') ? 't-up' : (tt.startsWith('baj') ? 't-down' : 'muted')}">${tt}</span></div>
+      ${curvaSVG(totales, meses.map(monthShort), { meta, aria: 'Gasto mensual de los últimos meses', tip: meses.map(m => monthLabel(m).replace(/^./, c => c.toUpperCase())) })}
+      <div class="legend"><span><i style="background:${TINTA.accent}"></i>gasto mensual</span><span><i class="dash"></i>tendencia</span>${meta ? `<span><i class="k-meta"></i>meta</span>` : ''}<span class="tap-hint">toca el gráfico para ver cada mes</span></div>
+      ${meta ? `<div class="mes-pills">${meses.map((m, i) => { const curso = actual && m === k, ok = totales[i] <= meta, c = ok ? TINTA.ok : TINTA.alto; return `<span class="mes-pill${m === k ? ' on' : ''}" style="--c:${c}" title="${monthLabel(m)}: S/ ${fmtMonto(totales[i])} ${curso ? 'en curso, ' : ''}${ok ? 'dentro de' : 'sobre'} la meta"><b>${monthShort(m)}</b>${svg(ok ? 'check' : 'up', 12, c, 2.6)}<span>${kCorto(totales[i])}</span></span>`; }).join('')}</div>
+      <div class="legend"><span><i style="background:${TINTA.ok}"></i>dentro de la meta</span><span><i style="background:${TINTA.alto}"></i>sobre la meta</span><span>comparado con tu meta de hoy, S/ ${fmtMonto(meta)}</span></div>` : ''}`, 'wide');
+  }
 
   /* qué cambió: cada subcategoría contra el mes anterior (mismos días si el mes está en curso) */
   const prev = prevKey(k), clave = r => r.cat1 + '|' + (r.cat2 || '(sin definir)');
@@ -1578,7 +1582,7 @@ function paginaResumen(){
 /* ============================================================
    Arranque
    ============================================================ */
-const PAGINAS = { inicio: paginaInicio, gastos: paginaGastos, ritmo: paginaRitmo, compromisos: paginaCompromisos, resumen: paginaResumen };
+const PAGINAS = { inicio: paginaInicio, presupuesto: paginaPresupuesto, gastos: paginaGastos, compromisos: paginaCompromisos, historial: paginaHistorial };
 /* v13: un monto nunca se parte en dos líneas ("S/" arriba y "2,062" abajo): el espacio después de
    S/ o $ se vuelve no separable en todo lo que se dibuja (pestañas, hojas, contadores). */
 const RE_MONEDA = /(S\/|\$) (?=[-\d])/g;

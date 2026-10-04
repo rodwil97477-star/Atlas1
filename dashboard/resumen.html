@@ -2,28 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#101014">
-<meta name="color-scheme" content="dark">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Finanzas">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" href="icon-192.png">
-<title>Resumen · Finanzas</title>
-<link rel="preconnect" href="https://script.google.com">
-<link rel="preload" href="fonts/anton-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanzas</title>
+<script>location.replace('historial.html' + location.search);</script>
+<meta http-equiv="refresh" content="0; url=historial.html">
 </head>
-<body data-page="resumen">
-<div class="wrap">
-  <header class="top" id="top"></header>
-  <main id="app"><div class="skel-wrap" role="status" aria-label="Cargando tus movimientos"><div class="skel hero"></div><div class="skel"></div><div class="skel"></div></div></main>
-</div>
-<nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
-<script src="data.js"></script>
-<script src="app.js"></script>
-<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});</script>
-</body>
+<body><a href="historial.html">Resumen ahora se llama Historial</a></body>
 </html>
