@@ -633,6 +633,18 @@ function hojaDetalle(opt){
     const pts = tend.linea.map((v, i) => `${((i + 0.5) / n * 100).toFixed(2)},${(20 + (1 - v / maxB) * 130).toFixed(1)}`).join(' ');
     linea = `<svg viewBox="0 0 100 150" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:150px;overflow:visible" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--label-3)" stroke-width="1.5" stroke-dasharray="4 4" vector-effect="non-scaling-stroke" class="fi" style="--i:8"/></svg>`;
   }
+  /* v19: en un medio de pago, cuánto fue con crédito y cuánto con débito */
+  let tipos = '';
+  if(opt.tipos && delMes.length){
+    const nombreTipo = r => { const t = norm(r.tipo || ''); return t === 'credito' ? 'Crédito' : (t === 'debito' ? 'Débito' : (r.tipo ? r.tipo.replace(/^./, c => c.toUpperCase()) : 'Sin tipo')); };
+    const COL_TIPO = { 'Crédito': TINTA.warn, 'Débito': TINTA.accent, 'Sin tipo': TINTA.neutro };
+    const ORDEN = ['Crédito', 'Débito'], pos = t => { const i = ORDEN.indexOf(t); return i < 0 ? 9 : i; };
+    const gt = agrupar(delMes, nombreTipo).sort((x, y) => pos(x.clave) - pos(y.clave)), tot = suma(delMes);
+    const partes = gt.map(g => ({ n: g.clave, v: g.total, color: COL_TIPO[g.clave] || TINTA.neutro }));
+    tipos = `<div><div class="block-label">Crédito y débito</div>${stackBar(partes)}
+      <div class="list">${gt.map(g => `<div class="row"><span class="tile sm" style="background:${alpha(COL_TIPO[g.clave] || TINTA.neutro, 0.16)}">${svg('card', 16, COL_TIPO[g.clave] || TINTA.neutro)}</span><span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} mov.${g.clave === 'Crédito' ? ' · se paga con el estado de cuenta' : ''}</span></span><span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span><span class="date">${fmtPct(g.total, tot)}</span></span></div>`).join('')}</div></div>`;
+  }
+  const subMov = opt.subMov || (r2 => [opt.subFila ? opt.subFila(r2) : r2.cat3, r2.medio].filter(Boolean).join(' · '));
   let comp = '';
   if(opt.componer){
     const grupos = agrupar(delMes, opt.componer.clave).filter(g => g.clave);
@@ -647,6 +659,7 @@ function hojaDetalle(opt){
       <div class="chips">${deltaChip(actual, anterior, 'vs ' + monthShort(prev))}<span class="chip">prom. <b>S/ ${fmtMonto(prom)}</b></span><span class="chip">${textoTendencia(tend.pendiente, prom)}</span></div>
     </div>
     ${opt.presupuestoCat ? '<div id="presuCatWrap"></div>' : ''}
+    ${tipos}
     <div style="display:flex;flex-direction:column;gap:8px">
       <div class="block-label">Últimos ${meses.length} meses</div>
       <div style="position:relative">${barras}${linea}</div>
@@ -661,7 +674,7 @@ function hojaDetalle(opt){
     ${comp}
     <div>
       <div class="block-label">${delMes.length} movimiento${delMes.length === 1 ? '' : 's'} en ${monthLabel(k)} · de mayor a menor</div>
-      ${delMes.length ? listaConMas(delMes, 8, r => filaMov(r, { sub: r2 => [opt.subFila ? opt.subFila(r2) : r2.cat3, r2.medio].filter(Boolean).join(' · ') }), ['movimiento más', 'movimientos más']) : '<div class="empty">Sin movimientos este mes.</div>'}
+      ${delMes.length ? listaConMas(delMes, 8, r => filaMov(r, { sub: subMov }), ['movimiento más', 'movimientos más']) : '<div class="empty">Sin movimientos este mes.</div>'}
     </div>`;
   abrirHoja({ titulo: opt.titulo, ruta: opt.ruta, colorRuta: opt.colorRuta, icono: opt.icono, color: col, html,
     reabrir: () => hojaDetalle(opt),
@@ -669,7 +682,7 @@ function hojaDetalle(opt){
       contar($('#hojaNum', body), actual);
       if(opt.presupuestoCat) enlazarPresupuestoCat(body, opt.presupuestoCat, actual);
       const ids = $$('[data-mas]', body).map(b => b.dataset.mas);
-      const fuentes = {}; if(ids[0]) fuentes[ids[0]] = { filas: delMes, render: r => filaMov(r, { sub: r2 => [opt.subFila ? opt.subFila(r2) : r2.cat3, r2.medio].filter(Boolean).join(' · ') }) };
+      const fuentes = {}; if(ids[0]) fuentes[ids[0]] = { filas: delMes, render: r => filaMov(r, { sub: subMov }) };
       enlazarMas(body, fuentes);
       $$('[data-sub]', body).forEach(b => b.addEventListener('click', () => opt.componer.abrir(b.dataset.sub)));
     }
@@ -695,7 +708,8 @@ function abrirComercio(nombre){
 }
 function abrirMedio(clave, color){
   hojaDetalle({ titulo: clave, ruta: 'Medio de pago', color, etiqueta: 'Pagado en',
-    filtro: r => (r.medio || 'Sin registrar') === clave, subFila: r => r.cat3 || r.cat2,
+    filtro: r => (r.medio || 'Sin registrar') === clave, subFila: r => r.cat3 || r.cat2, tipos: true,
+    subMov: r => [r.cat3 || r.cat2, r.tipo ? r.tipo.replace(/^./, c => c.toUpperCase()) : ''].filter(Boolean).join(' · '),
     componer: { clave: r => r.cat2 || '(sin definir)', icono: g => g.clave, color: g => colorDe(g.clave, 2), abrir: c2 => { const f = ALL.find(r => r.cat2 === c2); if(f) abrirCat2(f.cat1, c2); } } });
 }
 function claveMedio(r){ return (r.medio || 'Sin registrar') + (r.tipo ? ' · ' + r.tipo : ''); }
@@ -903,13 +917,13 @@ function calcularAlertas(k){
   }
   // 3) gasto hormiga
   const horm = gasto.filter(r => r.montoSoles < 20);
-  if(horm.length >= 8) out.push({ tipo:'hormiga', ic:'coins', color:TINTA.warn, href:'gastos.html?vista=com',
+  if(horm.length >= 8) out.push({ tipo:'hormiga', ic:'coins', color:TINTA.warn, href:'gastos.html?vista=cat',
     titulo: `Gasto hormiga: S/ ${fmtMonto(suma(horm))}`, sub: `${horm.length} compras menores a S/ 20 este mes, el ${fmtPct(suma(horm), total)} de tu gasto` });
   // 4) comercios nuevos
   if(hayHistoria){
     const vistos = new Set(ALL.filter(r => monthKey(r.fecha) < k).map(r => r.comercio.toUpperCase()));
     const nuevos = agrupar(gasto.filter(r => r.comercio && !vistos.has(r.comercio.toUpperCase())), r => r.comercio);
-    if(nuevos.length) out.push({ tipo:'nuevos', ic:'store', color:TINTA.info, href:'gastos.html?vista=com',
+    if(nuevos.length) out.push({ tipo:'nuevos', ic:'store', color:TINTA.info, href:'gastos.html?vista=pag',
       titulo: `${nuevos.length} comercio${nuevos.length === 1 ? ' nuevo' : 's nuevos'}`,
       sub: nuevos.slice(0, 3).map(g => escapeHtml(g.clave)).join(', ') + (nuevos.length > 3 ? ` y ${nuevos.length - 3} más` : '') });
   }
@@ -919,7 +933,9 @@ function calcularAlertas(k){
 /* ============================================================
    GASTOS
    ============================================================ */
-const VISTAS = [['cat', 'Categoría'], ['com', 'Comercio'], ['med', 'Pago'], ['dias', 'Días']];
+/* v19: Comercio y Pago se juntan en "Pagos": a quién le pagaste y con qué */
+const VISTAS = [['cat', 'Categoría'], ['pag', 'Pagos'], ['dias', 'Días']];
+const VISTA_ALIAS = { com:'pag', med:'pag' };
 let VISTA = null, BUSQ = '';
 function segHTML(id, opciones, activa, etiqueta){
   const i = Math.max(0, opciones.findIndex(o => o[0] === activa));
@@ -936,7 +952,9 @@ function enlazarSeg(id, alCambiar){
 function paginaGastos(){
   if(!VISTA){
     let v = null; try{ v = new URLSearchParams(location.search).get('vista'); }catch(e){}
-    VISTA = VISTAS.some(x => x[0] === v) ? v : (lsGet('finanzas_vista') || 'cat');
+    v = VISTA_ALIAS[v] || v;
+    const guardada = VISTA_ALIAS[lsGet('finanzas_vista')] || lsGet('finanzas_vista');
+    VISTA = VISTAS.some(x => x[0] === v) ? v : (VISTAS.some(x => x[0] === guardada) ? guardada : 'cat');
   }
   const k = MES, prev = prevKey(k), filas = filasMes(k), total = suma(filas), fin = suma(filas.filter(r => !esGastoReal(r))), terc = filas.some(r => r.cat1 === 'Terceros');
   $('#app').innerHTML = `
@@ -965,8 +983,7 @@ function dibujarVista(cambio){
   let html = '';
   let wire = null;
   if(VISTA === 'cat') html = vistaCategorias(k, filas);
-  else if(VISTA === 'com') html = vistaComercios(k, filas);
-  else if(VISTA === 'med') html = vistaMedios(k, filas);
+  else if(VISTA === 'pag') html = vistaComercios(k, filas) + vistaMedios(k, filas);
   else { const r = vistaRitmoActividad(k); html = r.html; wire = r.wire; }
   cont.innerHTML = html;
   if(wire) wire();
@@ -977,6 +994,15 @@ function dibujarVista(cambio){
   plegarNotas(cont);
   activarAnimaciones(document.body.classList.contains('quiet'));
   ajustarTextoGraficos(cont); activarScrub(cont);
+}
+function cardHormiga(k, filas){
+  const gasto = filas.filter(esGastoReal), horm = gasto.filter(r => r.montoSoles < 20);
+  const hormPrev = suma(filasMes(prevKey(k)).filter(r => esGastoReal(r) && r.montoSoles < 20));
+  const topH = agrupar(horm, r => r.comercio).slice(0, 3);
+  return !horm.length ? '' : card(`${head('Gasto hormiga', '<span class="hint">compras menores a S/ 20</span>')}
+    <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="mid">S/ ${fmtMonto(suma(horm))}</span><span class="hint">en ${horm.length} compra${horm.length === 1 ? '' : 's'} · ${fmtPct(suma(horm), suma(gasto))} del gasto</span></div>
+    <div class="metrics"><div class="metric"><span class="ml">Ticket promedio</span><span class="mv">S/ ${fmt1(suma(horm) / horm.length)}</span></div><div class="metric"><span class="ml">vs ${monthShort(prevKey(k))}</span><span class="mv">${deltaTxt(suma(horm), hormPrev) || '-'}</span></div></div>
+    <div class="list">${topH.map(g => `<button class="row" data-com="${escapeHtml(g.clave)}" style="min-height:48px">${tile(iconoFila(g.filas[0]), colorFila(g.filas[0]), true)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span></span><span class="hint">${g.n} ${g.n === 1 ? 'vez' : 'veces'}</span><span class="amt" style="width:64px;text-align:right">S/ ${fmtMonto(g.total)}</span></button>`).join('')}</div>`);
 }
 function vistaCategorias(k, filas){
   if(!filas.length) return card('<div class="empty">Sin movimientos este mes.</div>');
@@ -1005,7 +1031,8 @@ function vistaCategorias(k, filas){
     subs += `<div class="cat-group">${grupo}</div>`;
   });
   return card(`${head('Reparto por categoría', `<span class="hint">${c1.length} categoría${c1.length === 1 ? '' : 's'}</span>`)}<div class="donut-row">${donutSVG(partes, 'S/ ' + fmtCorto(total), null, 'donutTotal')}${leyenda(partes)}</div><span class="tap-hint hint">toca una categoría para verla en la dona</span>`, 'wide')
-       + card(`${head('Subcategorías', Object.keys(presus).length ? `<a class="more" data-nav="presupuesto.html" href="presupuesto.html?mes=${k}">Ver presupuesto ${chev()}</a>` : '<span class="hint hint-tap">toca para ver el detalle</span>')}<div class="sub-cols">${subs}</div>`, 'tight wide');
+       + card(`${head('Subcategorías', Object.keys(presus).length ? `<a class="more" data-nav="presupuesto.html" href="presupuesto.html?mes=${k}">Ver presupuesto ${chev()}</a>` : '<span class="hint hint-tap">toca para ver el detalle</span>')}<div class="sub-cols">${subs}</div>`, 'tight wide')
+       + cardHormiga(k, filas);
 }
 let _comFilas = [];
 function vistaComercios(k, filas){
@@ -1019,15 +1046,8 @@ function vistaComercios(k, filas){
     const nuevo = hayHist && !vistos.has(g.clave.toUpperCase());
     return `<button class="row" data-com="${escapeHtml(g.clave)}">${tile(iconoFila(r0), colorFila(r0))}<span class="main"><span class="name" style="display:flex;align-items:center;gap:6px"><span style="overflow:hidden;text-overflow:ellipsis">${escapeHtml(g.clave)}</span>${nuevo ? '<span class="tag">nuevo</span>' : ''}</span><span class="track" style="margin-top:6px;height:5px"><span class="gx" style="width:${(g.total / max * 100).toFixed(1)}%;background:${colorFila(r0)}"></span></span></span><span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span><span class="date">${g.n} mov.</span></span>${chev()}</button>`;
   });
-  const gasto = filas.filter(esGastoReal), horm = gasto.filter(r => r.montoSoles < 20);
-  const hormPrev = suma(filasMes(prevKey(k)).filter(r => esGastoReal(r) && r.montoSoles < 20));
-  const topH = agrupar(horm, r => r.comercio).slice(0, 3);
-  let html = card(`${head('Dónde más gastaste', `<span class="hint">${coms.length} comercio${coms.length === 1 ? '' : 's'}</span>`)}
+  let html = card(`${head('Dónde pagaste', `<span class="hint">${coms.length} comercio${coms.length === 1 ? '' : 's'}</span>`)}
     <div class="list" id="comList">${_comFilas.slice(0, 8).join('')}</div>${coms.length > 8 ? `<button class="more" id="comMas" style="align-self:center">Ver los ${coms.length} comercios</button>` : ''}`, 'tight');
-  if(horm.length) html += card(`${head('Gasto hormiga', '<span class="hint">compras menores a S/ 20</span>')}
-    <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="mid">S/ ${fmtMonto(suma(horm))}</span><span class="hint">en ${horm.length} compra${horm.length === 1 ? '' : 's'} · ${fmtPct(suma(horm), suma(gasto))} del gasto</span></div>
-    <div class="metrics"><div class="metric"><span class="ml">Ticket promedio</span><span class="mv">S/ ${fmt1(suma(horm) / horm.length)}</span></div><div class="metric"><span class="ml">vs ${monthShort(prevKey(k))}</span><span class="mv">${deltaTxt(suma(horm), hormPrev) || '-'}</span></div></div>
-    <div class="list">${topH.map(g => `<button class="row" data-com="${escapeHtml(g.clave)}" style="min-height:48px">${tile(iconoFila(g.filas[0]), colorFila(g.filas[0]), true)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span></span><span class="hint">${g.n} ${g.n === 1 ? 'vez' : 'veces'}</span><span class="amt" style="width:64px;text-align:right">S/ ${fmtMonto(g.total)}</span></button>`).join('')}</div>`);
   return html;
 }
 const COLORES_MEDIO = ['#5EA2FF', '#FF9440', '#2FD3C2', '#FF8ADF', '#C9A6FF', '#B9DDFF', '#E3C08F'];
@@ -1043,7 +1063,7 @@ function vistaMedios(k, filas){
   const desglose = g => { const t = agrupar(g.filas.filter(r => r.tipo), r => r.tipo); if(!t.length) return ''; const sinT = suma(g.filas.filter(r => !r.tipo));
     return t.map(x => `<span class="pair">${escapeHtml(x.clave)} <b>S/ ${fmtMonto(x.total)}</b></span>`).concat(sinT > 0 ? [`<span class="pair">Sin tipo <b>S/ ${fmtMonto(sinT)}</b></span>`] : []).join(''); };
   const credito = filas.filter(r => norm(r.tipo) === 'credito');
-  let html = card(`${head('Por medio de pago', `<span class="hint">${med.length} medio${med.length === 1 ? '' : 's'}</span>`)}
+  let html = card(`${head('Con qué pagaste', `<span class="hint">${med.length} medio${med.length === 1 ? '' : 's'} · toca uno para ver crédito y débito</span>`)}
     ${stackBar(partes)}
     <div class="list">${med.map(g => {
       const ds = desglose(g);
@@ -1347,7 +1367,8 @@ function enlazarRitmoPresupuesto(cont, k){
    ============================================================ */
 function fijosDelMes(k){
   const marcados = leerFijosMarcados();
-  const ventanaF = ventana(k, 3);
+  // v19: un fijo cuenta si se pagó este mes o el anterior; si lleva dos meses sin aparecer, ya no es fijo
+  const ventanaF = ventana(k, 2);
   const claves = new Set();
   ALL.forEach(r => { const m = monthKey(r.fecha); if(ventanaF.includes(m) && (r.cat2 === 'Fijo' || marcados.includes(r.comercio.toUpperCase())) && r.comercio) claves.add(r.comercio.toUpperCase()); });
   const actual = esMesActual(k), hoy = diaLimite(k);
@@ -1402,6 +1423,16 @@ function paginaCompromisos(){
     </div>
     <p class="hint tuto" style="margin:0">Lo invertido y lo prestado no cuenta como gasto: es plata que sigue siendo tuya o que te van a devolver.</p>`, 'wide');
 
+  if(pendientes.length){
+    const orig = grupos.reduce((s, g) => s + g.original, 0), pagT = grupos.reduce((s, g) => s + g.pagado, 0);
+    html += card(`${head('Préstamos por cobrar', `<span class="hint">${grupos.length} persona${grupos.length === 1 ? '' : 's'}</span>`)}
+      <div class="mid" id="cobrarNum">S/ ${fmtMonto(porCobrar)}</div>
+      <div class="chips">${pagT > 0 ? `<span class="chip">recuperado <b>S/ ${fmtMonto(pagT)}</b> · ${fmtPct(pagT, orig)}</span>` : '<span class="chip">sin abonos registrados</span>'}</div>
+      <div>${grupos.map((g, i) => filaPersonaPrestamo(g, i)).join('')}</div>
+      ${!HOJA_PRESTAMOS ? '<span class="hint">Calculado desde tus egresos: los abonos se ven cuando la hoja Prestamos tiene datos.</span>' : ''}`);
+  }
+
+
   if(fijos.length){
     const pct = sPag + sPend > 0 ? sPag / (sPag + sPend) * 100 : 0;
     html += card(`${head('Gastos fijos', pend.length ? `<span class="hint">S/ ${fmtMonto(sPend)} por pagar</span>` : '<span class="hint">todo al día</span>')}
@@ -1412,21 +1443,6 @@ function paginaCompromisos(){
     html += card(`${head('Gastos fijos')}<div class="empty">Aún no hay movimientos en la subcategoría Fijo.</div>`);
   }
 
-  const marc = leerFijosMarcados();
-  const rec = detectarRecurrentes(ALL).filter(rc => rc.ultimo.cat2 !== 'Fijo' && rc.estable).sort((a, b) => b.meses.length - a.meses.length || b.ultimo.montoSoles - a.ultimo.montoSoles);
-  html += card(`${head('Recurrentes detectados', '<span class="hint">no están en tus fijos</span>')}
-    <p class="hint tuto" style="margin:2px 0 4px;line-height:1.45">Comercios que te cobran casi todos los meses. Si son fijos, márcalos para seguirlos arriba.</p>
-    <div class="list" id="recList">${rec.map((rc, idx) => { const on = marc.includes(rc.clave); return `<div class="row"${idx >= 5 ? ' hidden data-extra' : ''}>${tile(iconoFila(rc.ultimo), colorFila(rc.ultimo))}<span class="main"><span class="name">${escapeHtml(rc.nombre)}</span><span class="sub">S/ ${fmtSol(rc.ultimo.montoSoles)} · ${rc.meses.length} meses</span></span><button type="button" class="btn sm${on ? ' done' : ''}" data-fijo="${escapeHtml(rc.clave)}" aria-pressed="${on}" aria-label="${on ? 'Quitar de tus fijos' : 'Marcar como fijo'}: ${escapeHtml(rc.nombre)}">${on ? 'Es fijo' : 'Marcar fijo'}</button></div>`; }).join('') || '<div class="empty">No detecto otros cobros recurrentes.</div>'}</div>${rec.length > 5 ? `<button class="more" id="recMas" style="align-self:center">Ver ${rec.length - 5} más</button>` : ''}`, 'tight');
-
-  if(pendientes.length){
-    const orig = grupos.reduce((s, g) => s + g.original, 0), pagT = grupos.reduce((s, g) => s + g.pagado, 0);
-    html += card(`${head('Préstamos por cobrar', `<span class="hint">${grupos.length} persona${grupos.length === 1 ? '' : 's'}</span>`)}
-      <div class="mid" id="cobrarNum">S/ ${fmtMonto(porCobrar)}</div>
-      <div class="chips">${pagT > 0 ? `<span class="chip">recuperado <b>S/ ${fmtMonto(pagT)}</b> · ${fmtPct(pagT, orig)}</span>` : '<span class="chip">sin abonos registrados</span>'}</div>
-      <div>${grupos.map((g, i) => filaPersonaPrestamo(g, i)).join('')}</div>
-      ${!HOJA_PRESTAMOS ? '<span class="hint">Calculado desde tus egresos: los abonos se ven cuando la hoja Prestamos tiene datos.</span>' : ''}`);
-  }
-
   $('#app').innerHTML = html;
   contar($('#cobrarNum'), porCobrar);
   $$('[data-persona]').forEach(b => b.addEventListener('click', () => abrirPersonaPrestamos(b.dataset.persona)));
@@ -1435,12 +1451,6 @@ function paginaCompromisos(){
   contar($('#mInv'), suma(inv));
   contar($('#mPres'), suma(pres));
   $$('[data-com]').forEach(b => b.addEventListener('click', () => abrirComercio(b.dataset.com)));
-  const rm = $('#recMas'); if(rm) rm.addEventListener('click', () => { $$('#recList [data-extra]').forEach(e => { e.hidden = false; e.classList.add('view-in'); }); rm.remove(); });
-  $$('[data-fijo]').forEach(b => b.addEventListener('click', () => {
-    const l = leerFijosMarcados(), c = b.dataset.fijo, i = l.indexOf(c);
-    if(i >= 0) l.splice(i, 1); else l.push(c);
-    guardarFijosMarcados(l); render(true);
-  }));
 }
 
 /* ============================================================
