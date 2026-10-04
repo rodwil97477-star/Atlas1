@@ -5,17 +5,19 @@
    ============================================================ */
 /* v17: cada pestaña responde una sola pregunta.
    Inicio ¿cómo voy? · Presupuesto ¿me alcanza? · Gastos ¿en qué, dónde, cómo y cuándo?
-   Compromisos ¿qué tengo que pagar o cobrar? · Historial ¿cómo vengo los últimos meses?
-   Ritmo y Resumen ya no existen como pestañas: sus páginas viejas redirigen aquí. */
-const PAGINA = ({ ritmo:'presupuesto', resumen:'historial' })[document.body.dataset.page] || document.body.dataset.page || 'inicio';
+   Inversiones ¿estoy invirtiendo lo que me propuse? · Historial ¿cómo vengo los últimos meses?
+   Ritmo, Resumen y Compromisos ya no existen como pestañas: sus páginas viejas redirigen aquí.
+   v21: Compromisos se repartió: préstamos en Inicio y gastos fijos en Gastos > Categoría (fila Fijo). */
+const PAGINA = ({ ritmo:'presupuesto', resumen:'historial', compromisos:'inicio' })[document.body.dataset.page] || document.body.dataset.page || 'inicio';
 const TABS = [
   { id:'inicio', nombre:'Inicio', href:'index.html', ic:'home' },
   { id:'presupuesto', nombre:'Presupuesto', href:'presupuesto.html', ic:'target' },
   { id:'gastos', nombre:'Gastos', href:'gastos.html', ic:'pie' },
-  { id:'compromisos', nombre:'Compromisos', href:'compromisos.html', ic:'cal' },
+  { id:'inversiones', nombre:'Inversiones', href:'inversiones.html', ic:'inversion' },
   { id:'historial', nombre:'Historial', href:'historial.html', ic:'resumen' }
 ];
 let ALL = [], MESES = [], PRESTAMOS = [], MES = null, INFO = null, HOJA_PRESTAMOS = false, COMPLETO = true;
+let PORTAFOLIO = [], TC_BOT = null, HAY_HOJA_PORTAFOLIO = false;   // v21: pestaña Inversiones
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 /* v17: la ayuda ("toca para ver…") se muestra en las primeras visitas; desde la cuarta ya no hace falta */
@@ -266,7 +268,7 @@ function marcaRitmo(k, i){
   return `<i class="pace-tick fi" style="--i:${(i || 0) + 10};left:${(diaLimite(k) / diasDelMes(k) * 100).toFixed(1)}%" title="ritmo ideal a hoy"></i>`;
 }
 function leyendaRitmo(k){ return esMesActual(k) ? `<div class="legend meter-leg"><span><i class="k-mark"></i>ritmo ideal a hoy (día ${diaLimite(k)} de ${diasDelMes(k)})</span></div>` : ''; }
-function card(html, extra){ return `<section class="card anim ${extra || ''}">${html}</section>`; }
+function card(html, extra, id){ return `<section class="card anim ${extra || ''}"${id ? ` id="${id}"` : ''}>${html}</section>`; }
 function head(titulo, derecha){ return `<div class="card-head"><h2 class="card-title">${titulo}</h2>${derecha || ''}</div>`; }
 
 /* ---------- gráficos (SVG propio) ---------- */
@@ -593,6 +595,12 @@ function htmlPresupuestoGeneral(){
       <div class="line"><span>Presupuestado en categorías</span><span id="presuSumaCat">S/ ${fmtMonto(sumaPresupuestosCategoria())}</span></div>
       <div class="line"><span>Margen</span><span id="presuSumaMargen">S/ ${fmtMonto(margen)}</span></div>
       <div class="line total"><span>Meta total</span><span id="presuSumaTotal">S/ ${fmtMonto(sumaPresupuestosCategoria() + margen)}</span></div>
+    </div>
+    <div>
+      <div class="block-label">Inversión · aparte de la Meta</div>
+      <div class="row" style="border-bottom:none"><span class="tile" style="background:${alpha(TINTA.ok, 0.16)}">${svg('inversion', 18, TINTA.ok)}</span><span class="main"><span class="name">Invertir cada mes</span><span class="sub">en dólares · no cuenta como gasto</span></span>
+        <span class="presu-row-input"><span class="cur">$</span><input id="presuInvIn" type="number" inputmode="decimal" value="${leerMetaInversion() || ''}" placeholder="0" aria-label="Meta de inversión mensual en dólares"></span>
+      </div>
     </div>`;
 }
 /** v16: confirma que el monto quedó guardado: el campo destella en verde y aparece un check que se desvanece */
@@ -633,6 +641,16 @@ function enlazarPresupuestoGeneral(body){
       render(true);
     });
     mIn.addEventListener('keydown', e => { if(e.key === 'Enter') mIn.blur(); });
+  }
+  const iIn = $('#presuInvIn', body);
+  if(iIn){
+    iIn.addEventListener('blur', () => {
+      const v = parseFloat(String(iIn.value).replace(',', '.')), antes = leerMetaInversion();
+      guardarMetaInversion(isNaN(v) ? 0 : v);
+      if((isNaN(v) ? 0 : v) !== antes) marcarGuardado(iIn);
+      render(true);
+    });
+    iIn.addEventListener('keydown', e => { if(e.key === 'Enter') iIn.blur(); });
   }
 }
 function abrirPresupuestoGeneral(){
@@ -861,19 +879,35 @@ function paginaInicio(){
   html += `<section class="ap-sec anim"><div class="ap-h-row"><h2 class="ap-h">Últimos movimientos</h2>${ult.length > 5 ? `<button class="ap-link" id="verTodos">Ver todos</button>` : ''}</div>
     <div class="ap-group ap-tx">${ult.slice(0, 5).map(r => filaMov(r)).join('') || '<div class="ap-empty">Sin movimientos este mes.</div>'}</div></section>`;
 
-  /* accesos como filas de Ajustes */
-  html += `<section class="ap-sec anim"><h2 class="ap-h">Más</h2><div class="ap-group">
-    ${apFila(`presupuesto.html?mes=${k}`, 'target', '#0A84FF', 'Presupuesto', 'proyección y categorías')}
-    ${apFila(`gastos.html?vista=dias&mes=${k}`, 'cal', '#FF9F0A', 'Tus días', 'calendario y horas')}
-    ${apFila(`compromisos.html?mes=${k}`, 'repeat', '#BF5AF2', 'Compromisos', 'fijos y préstamos')}
-    ${apFila(`historial.html?mes=${k}`, 'resumen', '#64D2FF', 'Historial', 'tendencia de 6 meses')}
-  </div></section>`;
+  /* v21: préstamos por cobrar (antes en Compromisos). La sección "Más" se fue: repetía la barra de pestañas. */
+  html += seccionPrestamos(filas);
 
   html += `<p class="note">Los montos están en soles con el tipo de cambio del mes de cada movimiento. Inversiones y préstamos (rama Finanzas) y Terceros (la parte de un gasto compartido que te deben) no cuentan como gasto: es plata por cobrar o invertida.</p>`;
   $('#app').innerHTML = html;
   contar($('#heroNum'), total);
   enlazarMeta(k, total, gasto);
   const vt = $('#verTodos'); if(vt) vt.addEventListener('click', abrirListaMes);
+  contar($('#cobrarNum'), +(($('#cobrarNum') || {}).dataset || {}).v || 0);
+  $$('[data-persona]').forEach(b => b.addEventListener('click', () => abrirPersonaPrestamos(b.dataset.persona)));
+  // los enlaces viejos a Compromisos llegan con #cobrar
+  if(location.hash === '#cobrar' && !paginaInicio._fue && $('#cobrar')){ paginaInicio._fue = 1; requestAnimationFrame(() => $('#cobrar').scrollIntoView({ block:'start' })); }
+}
+/** v21: préstamos por cobrar en Inicio, debajo de los movimientos: una fila por persona y el total arriba */
+function seccionPrestamos(filas){
+  const pendientes = prestamosPendientes(PRESTAMOS), grupos = agruparPrestamos(pendientes);
+  const pres = filas.filter(r => (r.cat1 === 'Finanzas' && r.cat2 === 'Préstamos') || r.cat1 === 'Terceros');
+  if(!pendientes.length && !pres.length) return '';
+  const porCobrar = grupos.reduce((a, g) => a + g.saldo, 0), orig = grupos.reduce((a, g) => a + g.original, 0), pagT = grupos.reduce((a, g) => a + g.pagado, 0);
+  const datos = [
+    pendientes.length ? (pagT > 0 ? `recuperado <b>S/ ${fmtMonto(pagT)}</b> · ${fmtPct(pagT, orig)}` : 'sin abonos registrados') : 'nadie te debe',
+    pres.length ? `este mes prestaste <b>S/ ${fmtMonto(suma(pres))}</b>${pres.some(r => r.cat1 === 'Terceros') ? ' · incluye compartidos' : ''}` : ''
+  ].filter(Boolean);
+  return `<section class="ap-sec anim" id="cobrar"><div class="ap-h-row"><h2 class="ap-h">Préstamos por cobrar</h2><span class="ap-h-n" id="cobrarNum" data-v="${porCobrar}">S/ ${fmtMonto(porCobrar)}</span></div>
+    <div class="ap-group ap-loans">
+      <p class="ap-loans-sum">${datos.join('<span aria-hidden="true"> · </span>')}</p>
+      ${grupos.map((g, i) => filaPersonaPrestamo(g, i)).join('')}
+    </div>
+    ${!HOJA_PRESTAMOS && pendientes.length ? '<p class="ap-foot">Calculado desde tus egresos: los abonos se ven cuando la hoja Prestamos tiene datos.</p>' : ''}</section>`;
 }
 
 /* ---------- meta mensual (se guarda en este dispositivo) ---------- */
@@ -920,13 +954,18 @@ function calcularAlertas(k){
   if(peorPresu) out.push({ tipo:'presupuesto', ic:'target', color:TINTA.alto, href:'presupuesto.html',
     titulo: `${escapeHtml(peorPresu.cat2)} superó su presupuesto`,
     sub: `S/ ${fmtMonto(peorPresu.gastado)} de S/ ${fmtMonto(peorPresu.monto)} este mes` });
+  // v21: la inversión del mes es una disciplina: si ya pasó el día en que sueles invertir y no lo hiciste, se avisa
+  const inv = estadoInversion(k);
+  if(inv && inv.estado === 'falta' && esMesActual(k)) out.push({ tipo:'inversion', ic:'inversion', color:TINTA.justo, href:'inversiones.html',
+    titulo: inv.aporteUsd > 0 ? `Te faltan ${fmtUsd(inv.meta - inv.aporteUsd)} para tu inversión del mes` : `Aún no inviertes este mes`,
+    sub: `tu meta es ${fmtUsd(inv.meta)}${inv.diaUsual ? `; sueles invertir hacia el día ${inv.diaUsual}` : ''}` });
   // 1) cambios de precio en cobros recurrentes
   detectarRecurrentes(ALL).forEach(rc => {
     const esteMes = rc.porMes[k]; const anterior = rc.porMes[prev];
     if(esteMes && anterior && anterior.montoSoles > 0 && (esteMes.cat2 === 'Fijo' || rc.estable)){
       const v = (esteMes.montoSoles - anterior.montoSoles) / anterior.montoSoles;
       if(Math.abs(v) > 0.03 && out.filter(a => a.tipo === 'precio').length < 1)
-        out.push({ tipo:'precio', ic:'repeat', color: v > 0 ? TINTA.alto : TINTA.ok, href:'compromisos.html',
+        out.push({ tipo:'precio', ic:'repeat', color: v > 0 ? TINTA.alto : TINTA.ok, href:'gastos.html?vista=cat&ir=fijos',
           titulo: `${escapeHtml(rc.nombre)} ${v > 0 ? 'subió' : 'bajó'} ${Math.round(Math.abs(v) * 100)}%`,
           sub: `pasó de S/ ${fmtSol(anterior.montoSoles)} a S/ ${fmtSol(esteMes.montoSoles)} este mes` });
     }
@@ -951,7 +990,7 @@ function calcularAlertas(k){
   if(hayHistoria){
     const vistos = new Set(ALL.filter(r => monthKey(r.fecha) < k).map(r => r.comercio.toUpperCase()));
     const nuevos = agrupar(gasto.filter(r => r.comercio && !vistos.has(r.comercio.toUpperCase())), r => r.comercio);
-    if(nuevos.length) out.push({ tipo:'nuevos', ic:'store', color:TINTA.info, href:'gastos.html?vista=pag',
+    if(nuevos.length) out.push({ tipo:'nuevos', ic:'store', color:TINTA.info, href:'gastos.html?vista=cat&ir=comercios',
       titulo: `${nuevos.length} comercio${nuevos.length === 1 ? ' nuevo' : 's nuevos'}`,
       sub: nuevos.slice(0, 3).map(g => escapeHtml(g.clave)).join(', ') + (nuevos.length > 3 ? ` y ${nuevos.length - 3} más` : '') });
   }
@@ -961,9 +1000,9 @@ function calcularAlertas(k){
 /* ============================================================
    GASTOS
    ============================================================ */
-/* v19: Comercio y Pago se juntan en "Pagos": a quién le pagaste y con qué */
-const VISTAS = [['cat', 'Categoría'], ['pag', 'Pagos'], ['dias', 'Días']];
-const VISTA_ALIAS = { com:'pag', med:'pag' };
+/* v21: Gastos queda en Categoría y Días. Lo de "Pagos" (dónde y con qué pagaste) vive ahora dentro de Categoría */
+const VISTAS = [['cat', 'Categoría'], ['dias', 'Días']];
+const VISTA_ALIAS = { com:'cat', med:'cat', pag:'cat' };
 let VISTA = null, BUSQ = '';
 function segHTML(id, opciones, activa, etiqueta){
   const i = Math.max(0, opciones.findIndex(o => o[0] === activa));
@@ -1004,6 +1043,10 @@ function paginaGastos(){
   q.addEventListener('input', () => { BUSQ = q.value; buscar(); });
   $('#qx').addEventListener('click', () => { BUSQ = ''; q.value = ''; buscar(); q.focus(); });
   if(BUSQ) buscar();
+  // v21: los avisos de Inicio pueden llevar directo a una sección (fijos, comercios)
+  let ir = null; try{ ir = new URLSearchParams(location.search).get('ir'); }catch(e){}
+  const dest = ir && document.getElementById(ir);
+  if(dest && !paginaGastos._fue){ paginaGastos._fue = 1; requestAnimationFrame(() => dest.scrollIntoView({ block:'start', behavior: REDUCIR_MOVIMIENTO ? 'auto' : 'smooth' })); if(ir === 'fijos'){ const d = $('details', dest); if(d) d.open = true; } }
 }
 function dibujarVista(cambio){
   const cont = $('#gVista'); if(!cont) return;
@@ -1011,7 +1054,6 @@ function dibujarVista(cambio){
   let html = '';
   let wire = null;
   if(VISTA === 'cat') html = vistaCategorias(k, filas);
-  else if(VISTA === 'pag') html = vistaComercios(k, filas) + vistaMedios(k, filas);
   else { const r = vistaRitmoActividad(k); html = r.html; wire = r.wire; }
   cont.innerHTML = html;
   if(wire) wire();
@@ -1041,6 +1083,9 @@ function vistaCategorias(k, filas){
   let subs = '';
   const maxC2 = Math.max(...agrupar(filas, r => r.cat1 + '|' + (r.cat2 || '(sin definir)')).map(g => g.total), 1);
   const presus = leerPresupuestosCat();
+  // v21: los gastos fijos (antes en Compromisos) se abren debajo de la fila Fijo
+  const fijos = fijosDelMes(k);
+  let fijosPuestos = false;
   c1.forEach(g1 => {
     let grupo = `<div class="group-h">${icono(g1.clave, colorDe(g1.clave, 1), 15, 2.2)}<span>${escapeHtml(g1.clave)}</span><span>S/ ${fmtMonto(g1.total)}</span></div>`;
     const c2 = agrupar(g1.filas, r => r.cat2 || '(sin definir)');
@@ -1054,28 +1099,50 @@ function vistaCategorias(k, filas){
       const sobrePresu = presu && g.total > presu;
       const sub = `<span class="sub">${g.n} mov.${dt ? ' · ' + dt : ''}</span>`;
       const derecha = `<span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span>${presu ? `<span class="date" style="color:${sobrePresu ? TINTA.alto : 'var(--label-3)'};font-weight:${sobrePresu ? 700 : 500}">de S/ ${fmtMonto(presu)}</span>` : ''}</span>`;
-      return `<button class="row" data-c1="${escapeHtml(g1.clave)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, col)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span>${sub}<span class="track row-track"><span class="gx" style="--i:${i};width:${pct.toFixed(1)}%;background:${col}"></span></span></span>${derecha}${chev()}</button>`;
+      const panel = g.clave === 'Fijo' && fijos.length && !fijosPuestos ? (fijosPuestos = true, panelFijos(k, fijos)) : '';
+      return `<button class="row" data-c1="${escapeHtml(g1.clave)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, col)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span>${sub}<span class="track row-track"><span class="gx" style="--i:${i};width:${pct.toFixed(1)}%;background:${col}"></span></span></span>${derecha}${chev()}</button>${panel}`;
     }).join('') + '</div>';
     subs += `<div class="cat-group">${grupo}</div>`;
   });
+  // si este mes todavía no se pagó ningún fijo, igual se ve lo que falta
+  if(fijos.length && !fijosPuestos) subs += `<div class="cat-group"><div class="group-h">${icono('Fijo', colorDe('Fijo', 2), 15, 2.2)}<span>Fijo</span><span>S/ 0</span></div><div class="list">${panelFijos(k, fijos)}</div></div>`;
   return card(`${head('Reparto por categoría', `<span class="hint">${c1.length} categoría${c1.length === 1 ? '' : 's'}</span>`)}<div class="donut-row">${donutSVG(partes, 'S/ ' + fmtCorto(total), null, 'donutTotal')}${leyenda(partes)}</div><span class="tap-hint hint">toca una categoría para verla en la dona</span>`, 'wide')
        + card(`${head('Subcategorías', Object.keys(presus).length ? `<a class="more" data-nav="presupuesto.html" href="presupuesto.html?mes=${k}">Ver presupuesto ${chev()}</a>` : '<span class="hint hint-tap">toca para ver el detalle</span>')}<div class="sub-cols">${subs}</div>`, 'tight wide')
-       + cardHormiga(k, filas);
+       + vistaComercios(k, filas)
+       + cardHormiga(k, filas)
+       + vistaMedios(k, filas);
+}
+/** v21: lo que se veía en Compromisos > Gastos fijos, compacto bajo la fila Fijo: avance, línea del mes y la lista */
+function panelFijos(k, fijos){
+  const pag = fijos.filter(f => f.pagado), pend = fijos.filter(f => !f.pagado);
+  const sPag = pag.reduce((a, f) => a + f.monto, 0), sPend = pend.reduce((a, f) => a + f.monto, 0);
+  const pct = sPag + sPend > 0 ? sPag / (sPag + sPend) * 100 : 0;
+  return `<div class="fijos-panel" id="fijos">
+    <div class="fx-top"><span class="fx-t">Cobros fijos · <b>${pag.length} de ${fijos.length}</b> pagados</span><span class="fx-s ${pend.length ? 't-justo' : 't-down'}">${pend.length ? `S/ ${fmtMonto(sPend)} por pagar` : 'todo al día'}</span></div>
+    <div class="track fx-track"><span class="gx" style="width:${pct.toFixed(1)}%;background:var(--down)"></span></div>
+    <span class="hint">S/ ${fmtMonto(sPag)} pagados de S/ ${fmtMonto(sPag + sPend)}${pend.length ? ` · falta${pend.length === 1 ? '' : 'n'} ${pend.length}` : ''}</span>
+    ${lineaCobros(k, fijos)}
+    <details class="fx-det"><summary><span class="ver">Ver los ${fijos.length} cobros</span><span class="ocultar">Ocultar cobros</span><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG.down}</svg></summary>
+      <div class="list">${fijos.map(f => `<button class="row" data-com="${escapeHtml(f.nombre)}"><span class="tile sm" style="background:${f.pagado ? 'var(--down-soft)' : 'var(--warn-soft)'}">${svg(f.pagado ? 'check' : 'clock', 16, f.pagado ? 'var(--down)' : 'var(--warn)')}</span><span class="main"><span class="name">${escapeHtml(f.nombre)}</span><span class="sub" style="color:${f.pagado ? 'var(--down)' : 'var(--warn)'};font-weight:600;white-space:normal">${f.estado}</span></span><span class="right"><span class="amt">S/ ${fmtSol(f.monto)}</span><span class="date">${escapeHtml(f.ref.cat3 || f.ref.cat2)}${f.marcado ? ' · marcado' : ''}</span></span></button>`).join('')}</div>
+    </details>
+  </div>`;
 }
 let _comFilas = [];
 function vistaComercios(k, filas){
   if(!filas.length) return card('<div class="empty">Sin movimientos este mes.</div>');
   const vistos = new Set(ALL.filter(r => monthKey(r.fecha) < k).map(r => r.comercio.toUpperCase()));
   const hayHist = primerMes() && primerMes() < k;
-  const coms = agrupar(filas.filter(r => r.comercio), r => r.comercio);
+  // v21: "dónde más gastas" es gasto real: inversiones, préstamos y compartidos quedan fuera
+  const coms = agrupar(filas.filter(r => r.comercio && esGastoReal(r)), r => r.comercio);
   const max = coms.length ? coms[0].total : 1;
   _comFilas = coms.map(g => {
     const r0 = agrupar(g.filas, r => iconoFila(r))[0].filas[0];
     const nuevo = hayHist && !vistos.has(g.clave.toUpperCase());
     return `<button class="row" data-com="${escapeHtml(g.clave)}">${tile(iconoFila(r0), colorFila(r0))}<span class="main"><span class="name" style="display:flex;align-items:center;gap:6px"><span style="overflow:hidden;text-overflow:ellipsis">${escapeHtml(g.clave)}</span>${nuevo ? '<span class="tag">nuevo</span>' : ''}</span><span class="track" style="margin-top:6px;height:5px"><span class="gx" style="width:${(g.total / max * 100).toFixed(1)}%;background:${colorFila(r0)}"></span></span></span><span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span><span class="date">${g.n} mov.</span></span>${chev()}</button>`;
   });
-  let html = card(`${head('Dónde pagaste', `<span class="hint">${coms.length} comercio${coms.length === 1 ? '' : 's'}</span>`)}
-    <div class="list" id="comList">${_comFilas.slice(0, 8).join('')}</div>${coms.length > 8 ? `<button class="more" id="comMas" style="align-self:center">Ver los ${coms.length} comercios</button>` : ''}`, 'tight');
+  const top3 = coms.slice(0, 3).reduce((a, g) => a + g.total, 0), tot = suma(filas.filter(esGastoReal));
+  let html = card(`${head('Dónde más gastas', `<span class="hint">${coms.length} comercio${coms.length === 1 ? '' : 's'}${coms.length > 3 ? ` · los 3 primeros son el ${fmtPct(top3, tot)}` : ''}</span>`)}
+    <div class="list" id="comList">${_comFilas.slice(0, 6).join('')}</div>${coms.length > 6 ? `<button class="more" id="comMas" style="align-self:center">Ver los ${coms.length} comercios</button>` : ''}`, 'tight', 'comercios');
   return html;
 }
 const COLORES_MEDIO = ['#5EA2FF', '#FF9440', '#2FD3C2', '#FF8ADF', '#C9A6FF', '#B9DDFF', '#E3C08F'];
@@ -1093,13 +1160,11 @@ function vistaMedios(k, filas){
   const credito = filas.filter(r => norm(r.tipo) === 'credito');
   let html = card(`${head('Con qué pagaste', `<span class="hint">${med.length} medio${med.length === 1 ? '' : 's'} · toca uno para ver crédito y débito</span>`)}
     ${stackBar(partes)}
+    ${credito.length ? `<div class="fx-credito">${svg('card', 16, 'var(--warn)')}<span><b>S/ ${fmtMonto(suma(credito))}</b> cargados a tarjeta de crédito · ${credito.length} consumo${credito.length === 1 ? '' : 's'}, ${fmtPct(suma(credito), total)} del mes. Se pagan con el estado de cuenta.</span></div>` : ''}
     <div class="list">${med.map(g => {
       const ds = desglose(g);
       return `<button class="row" data-med="${escapeHtml(g.clave)}" data-col="${col(g)}"><span class="tile" style="background:${alpha(col(g), 0.14)}">${svg('card', 18, col(g))}</span><span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} mov.</span>${ds ? `<span class="split">${ds}</span>` : ''}</span><span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span><span class="date">${fmtPct(g.total, total)}</span></span>${chev()}</button>`;
     }).join('')}</div>`, 'tight');
-  if(credito.length) html += card(`${head('Cargado a tarjeta de crédito')}
-    <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="mid">S/ ${fmtMonto(suma(credito))}</span><span class="hint">${credito.length} consumo${credito.length === 1 ? '' : 's'} · ${fmtPct(suma(credito), total)} del mes</span></div>
-    <p class="insight" style="margin:0">Estos consumos no salen de tu cuenta hoy: los pagas cuando llegue el estado de cuenta de la tarjeta.</p>`);
   if(med.some(g => g.clave === 'Sin registrar')) html += `<p class="note">"Sin registrar" son movimientos que entraron sin medio de pago (por ejemplo, los anteriores a que el bot empezara a guardarlo).</p>`;
   return html;
 }
@@ -1109,8 +1174,8 @@ function enlazarVista(cont){
   $$('[data-med]', cont).forEach(b => b.addEventListener('click', () => abrirMedio(b.dataset.med, b.dataset.col)));
   const mas = $('#comMas', cont);
   if(mas) mas.addEventListener('click', () => {
-    const l = $('#comList', cont); l.insertAdjacentHTML('beforeend', _comFilas.slice(8).join(''));
-    $$('[data-com]', l).slice(8).forEach(b => { b.addEventListener('click', () => abrirComercio(b.dataset.com)); $$('.gx', b).forEach(x => x.style.transform = 'none'); });
+    const l = $('#comList', cont); l.insertAdjacentHTML('beforeend', _comFilas.slice(6).join(''));
+    $$('[data-com]', l).slice(6).forEach(b => { b.addEventListener('click', () => abrirComercio(b.dataset.com)); $$('.gx', b).forEach(x => x.style.transform = 'none'); });
     mas.remove();
   });
 }
@@ -1308,7 +1373,8 @@ function htmlPresupuesto(k){
     return card(`${head('Gasto promedio por día', `<span class="chip">${actual ? lim + ' días' : 'mes completo'}</span>`)}<div class="big" id="presuHeroNum" data-v="${prom}">S/ ${fmtMonto(prom)}</div><div class="chips">${deltaChip(prom, promPrev > 0 ? promPrev : null, 'vs ' + monthShort(prev))}</div>`, 'wide')
       + card(`${head('Presupuesto')}
       <p class="msg" style="font-size:14px;color:var(--label-2)">Todavía no configuras un presupuesto. Arma uno por categoría (o un margen general) para ver aquí tu ritmo de gasto contra tu meta y cuánto puedes gastar por día.</p>
-      <button class="btn solid" id="ritmoPresuCta">${svg('target', 15)}Configurar presupuesto</button>`, 'wide');
+      <button class="btn solid" id="ritmoPresuCta">${svg('target', 15)}Configurar presupuesto</button>`, 'wide')
+      + cardDisciplina(k, false);
   }
   const metaDia = meta / dm, rest = actual ? dm - lim : 0;
   const dif = prom - metaDia;
@@ -1373,7 +1439,10 @@ function htmlPresupuesto(k){
       <div class="list">${libres.slice(0, 6).map(g => { const r0 = g.filas[0]; return `<button class="row" data-c1="${escapeHtml(r0.cat1)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, colorDe(g.clave, 2), true)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} mov.</span></span><span class="amt">S/ ${fmtMonto(g.total)}</span>${chev()}</button>`; }).join('') || '<div class="empty">Todo tu gasto tiene presupuesto propio.</div>'}</div>`, 'tight');
   }
 
-  html += `<p class="note">Tu meta es la suma de tus presupuestos por categoría más tu margen. Para ver cómo te fue contra la meta en los meses anteriores, abre <a href="historial.html?mes=${k}" data-nav="historial.html">Historial</a>.</p>`;
+  /* v21: la inversión del mes vive en el mismo presupuesto, pero aparte: no es gasto ni entra en la Meta */
+  html += cardDisciplina(k, false);
+
+  html += `<p class="note">Tu meta es la suma de tus presupuestos por categoría más tu margen; la inversión del mes va aparte y no suma. Para ver cómo te fue contra la meta en los meses anteriores, abre <a href="historial.html?mes=${k}" data-nav="historial.html">Historial</a>.</p>`;
   return html;
 }
 function enlazarRitmoPresupuesto(cont, k){
@@ -1381,6 +1450,7 @@ function enlazarRitmoPresupuesto(cont, k){
   if(cta) cta.addEventListener('click', abrirPresupuestoGeneral);
   const ges = $('#presuGestionar', cont);
   if(ges) ges.addEventListener('click', abrirPresupuestoGeneral);
+  enlazarDisciplina(cont);
   const hn = $('#presuHeroNum', cont);
   if(hn) contar(hn, +hn.dataset.v);
   $$('[data-c2]', cont).forEach(b => b.addEventListener('click', () => abrirCat2(b.dataset.c1, b.dataset.c2)));
@@ -1391,7 +1461,7 @@ function enlazarRitmoPresupuesto(cont, k){
 }
 
 /* ============================================================
-   COMPROMISOS
+   GASTOS FIJOS (v21: se ven en Gastos > Categoría, bajo la fila Fijo)
    ============================================================ */
 function fijosDelMes(k){
   const marcados = leerFijosMarcados();
@@ -1434,53 +1504,6 @@ function lineaCobros(k, fijos){
     </div>
     <div class="legend tl-leg"><span><i class="tl-k ok"></i>pagado</span><span><i class="tl-k pend"></i>por pagar</span>${prox ? `<span class="tl-next">Próximo: <b>${escapeHtml(prox.f.nombre)}</b> el día ${prox.d} (${faltan === 1 ? 'mañana' : 'en ' + faltan + ' días'}) · S/ ${fmtSol(prox.f.monto)}</span>` : ''}</div>`;
 }
-function paginaCompromisos(){
-  const k = MES, filas = filasMes(k);
-  const fijos = fijosDelMes(k), pag = fijos.filter(f => f.pagado), pend = fijos.filter(f => !f.pagado);
-  const sPag = pag.reduce((s, f) => s + f.monto, 0), sPend = pend.reduce((s, f) => s + f.monto, 0);
-  const pendientes = prestamosPendientes(PRESTAMOS);
-  const grupos = agruparPrestamos(pendientes);   // v12: una fila por persona
-  const porCobrar = grupos.reduce((s, g) => s + g.saldo, 0);
-  const inv = filas.filter(r => r.cat2 === 'Inversiones y Ahorro'), pres = filas.filter(r => r.cat2 === 'Préstamos' || r.cat1 === 'Terceros');
-  let html = card(`${head('Este mes', `<span class="hint">${monthLabel(k)}</span>`)}
-    <div class="metrics">
-      <div class="metric"><span class="ml">Gastos fijos pagados</span><span class="mv" id="mFijos">S/ ${fmtMonto(sPag)}</span><span class="ms">${pag.length} de ${fijos.length}${sPend > 0 ? ` · S/ ${fmtMonto(sPend)} por pagar` : ''}</span></div>
-      <div class="metric"><span class="ml">Por cobrar</span><span class="mv" id="mCobrar">S/ ${fmtMonto(porCobrar)}</span><span class="ms">${grupos.length} persona${grupos.length === 1 ? '' : 's'}</span></div>
-      <div class="metric"><span class="ml">Invertido y ahorrado</span><span class="mv" id="mInv">S/ ${fmtMonto(suma(inv))}</span><span class="ms">${inv.length} movimiento${inv.length === 1 ? '' : 's'}</span></div>
-      <div class="metric"><span class="ml">Prestado</span><span class="mv" id="mPres">S/ ${fmtMonto(suma(pres))}</span><span class="ms">${pres.length} movimiento${pres.length === 1 ? '' : 's'} · incluye compartidos</span></div>
-    </div>
-    <p class="hint tuto" style="margin:0">Lo invertido y lo prestado no cuenta como gasto: es plata que sigue siendo tuya o que te van a devolver.</p>`, 'wide');
-
-  if(pendientes.length){
-    const orig = grupos.reduce((s, g) => s + g.original, 0), pagT = grupos.reduce((s, g) => s + g.pagado, 0);
-    html += card(`${head('Préstamos por cobrar', `<span class="hint">${grupos.length} persona${grupos.length === 1 ? '' : 's'}</span>`)}
-      <div class="mid" id="cobrarNum">S/ ${fmtMonto(porCobrar)}</div>
-      <div class="chips">${pagT > 0 ? `<span class="chip">recuperado <b>S/ ${fmtMonto(pagT)}</b> · ${fmtPct(pagT, orig)}</span>` : '<span class="chip">sin abonos registrados</span>'}</div>
-      <div>${grupos.map((g, i) => filaPersonaPrestamo(g, i)).join('')}</div>
-      ${!HOJA_PRESTAMOS ? '<span class="hint">Calculado desde tus egresos: los abonos se ven cuando la hoja Prestamos tiene datos.</span>' : ''}`);
-  }
-
-
-  if(fijos.length){
-    const pct = sPag + sPend > 0 ? sPag / (sPag + sPend) * 100 : 0;
-    html += card(`${head('Gastos fijos', pend.length ? `<span class="hint">S/ ${fmtMonto(sPend)} por pagar</span>` : '<span class="hint">todo al día</span>')}
-      <div style="display:flex;flex-direction:column;gap:6px"><div class="track" style="height:8px;border-radius:4px"><span class="gx" style="width:${pct.toFixed(1)}%;background:var(--down)"></span></div><span class="hint">S/ ${fmtMonto(sPag)} pagados de S/ ${fmtMonto(sPag + sPend)}${pend.length ? ` · falta${pend.length === 1 ? '' : 'n'} ${pend.length}` : ''}</span></div>
-      ${lineaCobros(k, fijos)}
-      <div class="list">${fijos.map(f => `<button class="row" data-com="${escapeHtml(f.nombre)}"><span class="tile" style="background:${f.pagado ? 'var(--down-soft)' : 'var(--warn-soft)'}">${svg(f.pagado ? 'check' : 'clock', 18, f.pagado ? 'var(--down)' : 'var(--warn)')}</span><span class="main"><span class="name">${escapeHtml(f.nombre)}</span><span class="sub" style="color:${f.pagado ? 'var(--down)' : 'var(--warn)'};font-weight:600;white-space:normal">${f.estado}</span></span><span class="right"><span class="amt">S/ ${fmtSol(f.monto)}</span><span class="date">${escapeHtml(f.ref.cat3 || f.ref.cat2)}${f.marcado ? ' · marcado' : ''}</span></span></button>`).join('')}</div>`, 'tight');
-  } else {
-    html += card(`${head('Gastos fijos')}<div class="empty">Aún no hay movimientos en la subcategoría Fijo.</div>`);
-  }
-
-  $('#app').innerHTML = html;
-  contar($('#cobrarNum'), porCobrar);
-  $$('[data-persona]').forEach(b => b.addEventListener('click', () => abrirPersonaPrestamos(b.dataset.persona)));
-  contar($('#mFijos'), sPag);
-  contar($('#mCobrar'), porCobrar);
-  contar($('#mInv'), suma(inv));
-  contar($('#mPres'), suma(pres));
-  $$('[data-com]').forEach(b => b.addEventListener('click', () => abrirComercio(b.dataset.com)));
-}
-
 /* ============================================================
    PRÉSTAMOS AGRUPADOS POR PERSONA (v12)
    Una persona con varios préstamos (p.ej. varios gastos compartidos) es UNA fila con la suma;
@@ -1559,6 +1582,239 @@ function abrirPersonaPrestamos(clave){
     <p class="hint" style="margin:0">Toca un préstamo para ver ese comercio. Los abonos se registran desde /prestamos en Telegram.</p>`;
   abrirHoja({ titulo: persona, ruta: 'Préstamos por cobrar', html,
     enlazar: body => $$('[data-com]', body).forEach(b => b.addEventListener('click', () => abrirComercio(b.dataset.com))) });
+}
+
+/* ============================================================
+   INVERSIONES (v21) · ¿estoy invirtiendo lo que me propuse?
+   El portafolio sale de las capturas que mandas al bot (hoja Portafolio, en dólares) y se muestra en
+   soles con el tipo de cambio de hoy. Los aportes salen de tus movimientos Finanzas > Inversiones y Ahorro.
+   Invertir no es gastar: nada de esto entra en la Meta; se sigue como una disciplina mensual.
+   ============================================================ */
+const TC_RESPALDO = 3.7, RENDIMIENTO_SUPUESTO = 0.07;
+function fmtUsd(v){ return '$ ' + fmtMonto(v); }
+function fmtCant(v){ return Number(v || 0).toLocaleString('en-US', { maximumFractionDigits:4 }); }
+function signo(v){ return v >= 0 ? '+' : '−'; }
+/** TC de un mes deducido de tus movimientos en dólares (el bot los pasa a soles con el TC de ese mes) */
+function tcDelMes(k){
+  const tcs = ALL.filter(r => r.moneda === 'USD' && r.monto > 0 && r.montoSoles > 0 && monthKey(r.fecha) === k)
+    .map(r => r.montoSoles / r.monto).filter(t => t > 2 && t < 10).sort((a, b) => a - b);
+  return tcs.length ? tcs[Math.floor(tcs.length / 2)] : null;
+}
+/** El de hoy si el bot lo manda; si no, el último que se pueda deducir de tus movimientos */
+function tcHoy(){
+  if(TC_BOT) return { tc: TC_BOT, fuente: 'hoy' };
+  const m = MESES.slice().reverse().map(x => ({ k: x, tc: tcDelMes(x) })).find(x => x.tc);
+  return m ? { tc: m.tc, fuente: m.k } : { tc: TC_RESPALDO, fuente: null };
+}
+function tcParaMes(k){ return (esMesActual(k) && TC_BOT) || tcDelMes(k) || tcHoy().tc; }
+function esAporteInversion(r){ return r.cat1 === 'Finanzas' && r.cat2 === 'Inversiones y Ahorro' && !/emergencia/i.test(r.cat3); }
+function esFondoEmergencia(r){ return r.cat1 === 'Finanzas' && r.cat2 === 'Inversiones y Ahorro' && /emergencia/i.test(r.cat3); }
+function aUsd(r){ return r.moneda === 'USD' && r.monto > 0 ? r.monto : r.montoSoles / tcParaMes(monthKey(r.fecha)); }
+function aporteMes(k){ const rr = filasMes(k).filter(esAporteInversion); return { rr, usd: rr.reduce((a, r) => a + aUsd(r), 0), soles: suma(rr) }; }
+/** Día del mes en que sueles invertir: la mediana de tus aportes anteriores */
+function diaUsualInversion(k){
+  const d = ALL.filter(r => esAporteInversion(r) && monthKey(r.fecha) < k).map(r => r.fecha.getDate()).sort((a, b) => a - b);
+  return d.length ? d[Math.floor(d.length / 2)] : null;
+}
+/** La disciplina de un mes: hecho, a tiempo (pendiente) o falta. Contra la meta de inversión de hoy. */
+function estadoInversion(k){
+  const meta = leerMetaInversion(); if(!meta) return null;
+  const a = aporteMes(k), dm = diasDelMes(k), diaUsual = diaUsualInversion(k);
+  // se da por atrasado 3 días después de tu día de costumbre (o a 5 días del cierre si aún no hay costumbre)
+  const limite = diaUsual ? Math.min(dm, diaUsual + 3) : dm - 5;
+  const estado = a.usd >= meta * 0.98 ? 'hecho' : (esMesActual(k) && diaLimite(k) <= limite ? 'pendiente' : 'falta');
+  return { meta, aporteUsd: a.usd, aporteSoles: a.soles, filas: a.rr, estado, diaUsual, parcial: a.usd > 0 && estado !== 'hecho' };
+}
+/** Meses seguidos cumpliendo; el mes en curso solo suma cuando ya está hecho (y no rompe la racha mientras siga a tiempo) */
+function rachaInversion(k){
+  let n = 0, m = k; const p = primerMes(), e0 = estadoInversion(k);
+  if(!e0) return 0;
+  if(e0.estado === 'pendiente') m = prevKey(m);
+  while(p && m >= p){ const e = estadoInversion(m); if(!e || e.estado !== 'hecho') break; n++; m = prevKey(m); }
+  return n;
+}
+/** Posiciones vigentes: la última captura de cada activo (igual que /portafolio en el bot) */
+function posicionesPortafolio(hasta){
+  const ult = {};
+  PORTAFOLIO.forEach(p => { if(hasta && p.fecha > hasta) return; if(!ult[p.ticker] || p.fecha >= ult[p.ticker].fecha) ult[p.ticker] = p; });
+  return Object.values(ult).sort((a, b) => b.valor - a.valor);
+}
+/** Una captura por día con el valor total del portafolio a esa fecha */
+function capturasPortafolio(){
+  const clave = d => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+  const dias = {}; PORTAFOLIO.forEach(p => { const c = clave(p.fecha); if(!dias[c] || p.fecha > dias[c]) dias[c] = p.fecha; });
+  return Object.values(dias).sort((a, b) => a - b).map(f => {
+    const fin = new Date(f.getFullYear(), f.getMonth(), f.getDate(), 23, 59, 59), pos = posicionesPortafolio(fin);
+    return { fecha: f, valor: pos.reduce((a, p) => a + p.valor, 0), ganancia: pos.reduce((a, p) => a + p.ganancia, 0), pos };
+  });
+}
+function tileTicker(t, col){ return `<span class="tile tk" style="background:${alpha(col, 0.16)};color:${col}" aria-hidden="true">${escapeHtml(t.slice(0, 4))}</span>`; }
+function colorTicker(t){ return colorDe(t, 3); }
+
+/** La tarjeta de la disciplina mensual. completa = la de la pestaña Inversiones (con meses, racha y meta editable). */
+function cardDisciplina(k, completa){
+  const meta = leerMetaInversion(), nombreMes = MESES_LARGOS[+k.split('-')[1] - 1];
+  const form = (id, valor) => `<div class="form inv-form"><span class="presu-row-input inv-in"><span class="cur">$</span><input id="${id}" type="number" inputmode="decimal" placeholder="Ej. 300" value="${valor || ''}" aria-label="Meta de inversión mensual en dólares"></span><button class="btn solid sm" id="${id}Ok">Guardar</button>${valor ? `<button class="btn ghost sm" id="invMetaDel">Quitar</button>` : ''}</div>`;
+  if(!meta) return card(`${head('Inversión del mes', '<span class="hint">no cuenta como gasto</span>')}
+    <p class="msg" style="font-size:14px">Define cuánto quieres invertir cada mes. Te digo si ya lo hiciste y llevo tu racha; no suma a tu Meta de gasto.</p>
+    ${form('invMetaIn')}`, 'wide', 'disciplina');
+  const e = estadoInversion(k), falta = Math.max(0, meta - e.aporteUsd), actual = esMesActual(k);
+  const ES = { hecho:['ok', 'check', 'Hecho'], pendiente:['justo', 'clock', e.parcial ? 'En camino' : 'A tiempo'], falta:['alto', 'alerta', e.parcial ? 'Incompleto' : 'Sin invertir'] }[e.estado];
+  const col = ES[0] === 'ok' ? TINTA.ok : (ES[0] === 'justo' ? TINTA.justo : TINTA.alto);
+  const racha = rachaInversion(k);
+  const texto = e.estado === 'hecho'
+    ? `Cumpliste: invertiste ${fmtUsd(e.aporteUsd)} en ${nombreMes}.${racha > 1 ? ` Llevas <b>${racha} meses seguidos</b>.` : ''}`
+    : (e.estado === 'pendiente'
+      ? `Te faltan <b>${fmtUsd(falta)}</b>${e.diaUsual ? `; sueles invertir hacia el día ${e.diaUsual}` : ''}.`
+      : (actual ? `Te faltan <b>${fmtUsd(falta)}</b> para tu meta de este mes${e.diaUsual ? ` (sueles invertir hacia el día ${e.diaUsual})` : ''}.` : `En ${nombreMes} invertiste ${fmtUsd(e.aporteUsd)} de ${fmtUsd(meta)}.`));
+  let extra = '';
+  if(completa){
+    const meses = ventana(k, 6);
+    const pills = meses.map(m => {
+      const x = estadoInversion(m), ok = x.estado === 'hecho', espera = x.estado === 'pendiente';
+      const c = ok ? TINTA.ok : (espera ? TINTA.neutro : TINTA.alto);
+      return `<span class="mes-pill${m === k ? ' on' : ''}" style="--c:${c}" title="${monthLabel(m)}: ${fmtUsd(x.aporteUsd)} de ${fmtUsd(meta)}"><b>${monthShort(m)}</b>${svg(ok ? 'check' : (espera ? 'clock' : 'x'), 12, c, 2.6)}<span>${x.aporteUsd > 0 ? fmtUsd(x.aporteUsd) : '-'}</span></span>`;
+    }).join('');
+    const cumplidos = meses.filter(m => estadoInversion(m).estado === 'hecho').length;
+    extra = `<div class="mes-pills">${pills}</div>
+      <div class="legend"><span><i style="background:${TINTA.ok}"></i>cumplido</span><span><i style="background:${TINTA.alto}"></i>no llegó</span><span>${cumplidos} de ${meses.length} meses${racha ? ` · racha de ${racha}` : ''}</span></div>
+      ${e.filas.length ? `<div><div class="block-label">Aportes de ${nombreMes}</div><div class="list">${e.filas.slice().sort((a, b) => b.fecha - a.fecha).map(r => filaMov(r)).join('')}</div></div>` : ''}
+      <button class="btn ghost sm" id="invMetaEdit" style="align-self:flex-start">Cambiar meta</button><div id="invMetaForm"></div>`;
+  }
+  return card(`<div class="cartel st-${ES[0]}"><b>${svg(ES[1], 15, 'currentColor', 2.6)}${ES[2]}</b><span>${actual ? `día ${diaLimite(k)} de ${diasDelMes(k)}` : nombreMes}</span></div>
+    ${head('Inversión del mes', completa ? '<span class="hint">no cuenta como gasto</span>' : `<a class="more" data-nav="inversiones.html" href="inversiones.html?mes=${k}">Ver inversiones ${chev()}</a>`)}
+    <div class="inv-fila"><span class="mid">${fmtUsd(e.aporteUsd)}</span><span class="hint">de ${fmtUsd(meta)}${e.aporteSoles > 0 ? ` · S/ ${fmtMonto(e.aporteSoles)} invertidos` : ''}</span></div>
+    <div class="track" style="height:8px;border-radius:4px"><span class="gx" style="width:${Math.min(e.aporteUsd / meta * 100, 100).toFixed(1)}%;background:${col}"></span></div>
+    <p class="insight" style="margin:0">${texto}</p>
+    ${extra}`, 'wide', 'disciplina');
+}
+function enlazarDisciplina(cont){
+  const guardarDe = inp => { const v = parseFloat(String(inp.value).replace(',', '.')); if(isNaN(v) || v <= 0){ inp.focus(); return; } guardarMetaInversion(v); aviso('Meta de inversión guardada: ' + fmtUsd(v) + ' al mes', 'ok'); render(true); };
+  const ok = $('#invMetaInOk', cont), inp = $('#invMetaIn', cont);
+  if(ok){ ok.addEventListener('click', () => guardarDe(inp)); inp.addEventListener('keydown', e => { if(e.key === 'Enter') guardarDe(inp); }); }
+  const ed = $('#invMetaEdit', cont);
+  if(ed) ed.addEventListener('click', () => {
+    const f = $('#invMetaForm', cont);
+    if(f.innerHTML){ f.innerHTML = ''; return; }
+    f.innerHTML = `<div class="form inv-form view-in"><span class="presu-row-input inv-in"><span class="cur">$</span><input id="invMetaIn2" type="number" inputmode="decimal" value="${leerMetaInversion()}" aria-label="Meta de inversión mensual en dólares"></span><button class="btn solid sm" id="invMetaOk2">Guardar</button><button class="btn ghost sm" id="invMetaDel">Quitar</button></div>`;
+    const i2 = $('#invMetaIn2', f);
+    $('#invMetaOk2', f).addEventListener('click', () => guardarDe(i2));
+    i2.addEventListener('keydown', e => { if(e.key === 'Enter') guardarDe(i2); });
+    $('#invMetaDel', f).addEventListener('click', () => { guardarMetaInversion(0); render(true); });
+    i2.focus();
+  });
+}
+
+function paginaInversiones(){
+  const k = MES, { tc, fuente } = tcHoy(), S = v => v * tc;
+  const pos = posicionesPortafolio(), caps = capturasPortafolio();
+  const valor = pos.reduce((a, p) => a + p.valor, 0), gan = pos.reduce((a, p) => a + p.ganancia, 0), costo = valor - gan;
+  const colG = v => v >= 0 ? TINTA.ok : TINTA.alto;
+  const tcTxt = fuente === 'hoy' ? 'de hoy' : (fuente ? `de ${monthShort(fuente)}, aprox.` : 'referencial');
+  let html = '';
+
+  /* el portafolio en soles */
+  if(pos.length){
+    const ult = caps[caps.length - 1], ant = caps[caps.length - 2], dv = ant ? ult.valor - ant.valor : 0;
+    const dias = Math.floor((new Date() - ult.fecha) / 86400000);
+    html += card(`${head('Tu portafolio', `<span class="hint">${pos.length} posici${pos.length === 1 ? 'ón' : 'ones'} · captura ${fechaCorta(ult.fecha).toLowerCase()}</span>`)}
+      <div class="big" id="invNum" data-v="${S(valor)}">S/ ${fmtMonto(S(valor))}</div>
+      <div class="chips"><span class="chip">${fmtUsd(valor)}</span><span class="chip" style="color:${colG(gan)}">${flecha(gan >= 0)} ${signo(gan)}S/ ${fmtMonto(Math.abs(S(gan)))} · ${signo(gan)}${fmt1(Math.abs(costo ? gan / costo * 100 : 0))}%</span></div>
+      <div class="metrics">
+        <div class="metric"><span class="ml">Invertido</span><span class="mv">S/ ${fmtMonto(S(costo))}</span><span class="ms">${fmtUsd(costo)} de costo</span></div>
+        <div class="metric"><span class="ml">${gan >= 0 ? 'Ganancia' : 'Pérdida'}</span><span class="mv" style="color:${colG(gan)}">S/ ${fmtMonto(Math.abs(S(gan)))}</span><span class="ms">${signo(gan)}${fmtUsd(Math.abs(gan))}</span></div>
+        <div class="metric"><span class="ml">Desde la captura anterior</span><span class="mv"${ant ? ` style="color:${colG(dv)}"` : ''}>${ant ? `${signo(dv)}S/ ${fmtMonto(Math.abs(S(dv)))}` : '-'}</span><span class="ms">${ant ? `${fechaCorta(ant.fecha).toLowerCase()} → ${fechaCorta(ult.fecha).toLowerCase()}` : 'primera captura'}</span></div>
+        <div class="metric"><span class="ml">Tipo de cambio</span><span class="mv">${tc.toFixed(3)}</span><span class="ms">${tcTxt}</span></div>
+      </div>
+      ${dias > 30 ? `<p class="insight" style="margin:0">Tu última captura es de hace ${dias} días. Mándale una nueva al bot para ver el valor de hoy.</p>` : ''}`, 'wide');
+  } else {
+    html += card(`${head('Tu portafolio')}
+      <div class="inv-vacio"><span class="state-ic">${svg('inversion', 26, 'var(--label-2)', 2)}</span>
+      <p class="msg" style="font-size:14px">Mándale al bot una captura de tu portafolio del bróker. Aquí verás cuánto vale en soles con el tipo de cambio del día, cuánto ganas y cómo evoluciona.</p>
+      ${!HAY_HOJA_PORTAFOLIO ? '<p class="hint" style="margin:0">El bot todavía no envía la hoja Portafolio al dashboard: falta pegarle el cambio de <b>tools/bot-inversiones.gs</b>.</p>' : ''}</div>`, 'wide');
+  }
+
+  /* la disciplina del mes */
+  html += cardDisciplina(k, true);
+
+  /* cada posición */
+  if(pos.length){
+    const maxV = pos[0].valor, top = pos[0];
+    html += card(`${head('Posiciones', '<span class="hint hint-tap">toca una para ver su historia</span>')}
+      ${stackBar(pos.map(p => ({ n: p.ticker, v: p.valor, color: colorTicker(p.ticker) })))}
+      <div class="list">${pos.map((p, i) => { const c = colorTicker(p.ticker); return `<button class="row" data-tk="${escapeHtml(p.ticker)}">${tileTicker(p.ticker, c)}<span class="main"><span class="name">${escapeHtml(p.ticker)}</span><span class="sub">${fmtCant(p.cantidad)} u. · ${fmtPct(p.valor, valor)} del portafolio</span><span class="track row-track"><span class="gx" style="--i:${i};width:${(p.valor / maxV * 100).toFixed(1)}%;background:${c}"></span></span></span><span class="right"><span class="amt">S/ ${fmtMonto(S(p.valor))}</span><span class="date" style="color:${colG(p.ganancia)};font-weight:650">${signo(p.ganancia)}${fmt1(Math.abs(p.gananciaPct))}%</span></span>${chev()}</button>`; }).join('')}</div>
+      ${pos.length > 1 && top.valor / valor > 0.5 ? `<p class="insight" style="margin:0"><b>${escapeHtml(top.ticker)}</b> es el ${fmtPct(top.valor, valor)} de tu portafolio: más de la mitad depende de un solo activo.</p>` : ''}`, 'tight');
+  }
+
+  /* cómo evolucionó (al TC de hoy, para ver solo el movimiento de tus activos) */
+  if(caps.length >= 2){
+    const ult6 = caps.slice(-6), vals = ult6.map(c => S(c.valor)), d0 = vals[vals.length - 1] - S(caps[0].valor);
+    const etq = c => c.fecha.getDate() + ' ' + MESES_CORTOS[c.fecha.getMonth()].toLowerCase();
+    html += card(`${head('Evolución', `<span class="hint">${caps.length} capturas</span>`)}
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:20px;font-weight:700;letter-spacing:-0.02em;color:${colG(d0)}">${signo(d0)}S/ ${fmtMonto(Math.abs(d0))}</span><span class="hint">desde tu primera captura (${etq(caps[0])})</span></div>
+      ${curvaSVG(vals, ult6.map(etq), { aria: 'Valor del portafolio en cada captura', tip: ult6.map(c => 'Captura del ' + etq(c)) })}
+      <div class="legend"><span><i style="background:${TINTA.accent}"></i>valor en soles</span><span><i class="dash"></i>tendencia</span><span class="tap-hint">toca el gráfico para ver cada captura</span></div>
+      <span class="hint">Incluye tus aportes nuevos, no solo la ganancia. Todo al tipo de cambio de hoy.</span>`, 'wide');
+  }
+
+  /* aportes de los últimos meses */
+  const meta = leerMetaInversion(), meses = ventana(k, 6), aps = meses.map(aporteMes);
+  const totS = aps.reduce((a, x) => a + x.soles, 0), totU = aps.reduce((a, x) => a + x.usd, 0), conAp = aps.filter(x => x.usd > 0).length;
+  const fondo = ALL.filter(esFondoEmergencia);
+  if(totS > 0 || meta){
+    html += card(`${head('Aportes', `<span class="hint">últimos ${meses.length} meses</span>`)}
+      ${barrasV(meses.map((m, i) => ({ v: aps[i].soles, label: monthShort(m), color: m === k ? TINTA.ok : alpha(TINTA.ok, 0.32), on: m === k })), 140, { meta: meta ? meta * tc : 0, tope: meta ? meta * tc * 1.08 : 0 })}
+      <div class="legend"><span><i style="background:${TINTA.ok}"></i>${monthShort(k)}</span><span><i style="background:${alpha(TINTA.ok, 0.32)}"></i>otros meses</span>${meta ? `<span><i class="dash dash-meta"></i>meta ≈ S/ ${fmtMonto(meta * tc)}</span>` : ''}</div>
+      <div class="metrics">
+        <div class="metric"><span class="ml">Aportado</span><span class="mv">S/ ${fmtMonto(totS)}</span><span class="ms">${fmtUsd(totU)} en ${meses.length} meses</span></div>
+        <div class="metric"><span class="ml">Promedio por mes</span><span class="mv">${fmtUsd(conAp ? totU / meses.length : 0)}</span><span class="ms">invertiste en ${conAp} de ${meses.length}</span></div>
+        ${fondo.length ? `<div class="metric"><span class="ml">Fondo de emergencia</span><span class="mv">S/ ${fmtMonto(suma(fondo))}</span><span class="ms">${fondo.length} aporte${fondo.length === 1 ? '' : 's'} · aparte de la meta</span></div>` : ''}
+      </div>`, 'wide');
+  }
+
+  /* hacia dónde vas si mantienes el ritmo */
+  const aporteMensual = meta || (conAp ? totU / meses.length : 0);
+  if(valor > 0 || aporteMensual > 0){
+    const r = RENDIMIENTO_SUPUESTO / 12, fv = n => valor * Math.pow(1 + r, n) + aporteMensual * (Math.pow(1 + r, n) - 1) / r;
+    const plazos = [[12, '1 año'], [60, '5 años'], [120, '10 años']];
+    const pon10 = valor + aporteMensual * 120;
+    html += card(`${head('Hacia dónde vas', `<span class="hint">aportando ${fmtUsd(aporteMensual)} al mes</span>`)}
+      <div class="metrics">${plazos.map(([n, t]) => `<div class="metric"><span class="ml">En ${t}</span><span class="mv">S/ ${fmtMonto(S(fv(n)))}</span><span class="ms">${fmtUsd(fv(n))}</span></div>`).join('')}</div>
+      <p class="insight" style="margin:0">En 10 años, <b>S/ ${fmtMonto(S(pon10))}</b> serían lo que pusiste${valor > 0 ? ' (incluye lo que ya tienes)' : ''} y unos <b>S/ ${fmtMonto(S(fv(120) - pon10))}</b> el crecimiento.</p>
+      <span class="hint">Estimado con ${Math.round(RENDIMIENTO_SUPUESTO * 100)}% anual, un promedio histórico de largo plazo; no es una promesa. Al tipo de cambio de hoy.</span>`, 'wide');
+  }
+
+  html += `<p class="note">El portafolio sale de la última captura de cada activo que le mandaste al bot (hoja Portafolio, en dólares) y se pasa a soles con el tipo de cambio ${tcTxt === 'de hoy' ? 'de hoy' : 'más reciente que hay'}. Los aportes son tus movimientos de Finanzas › Inversiones y Ahorro (el fondo de emergencia va aparte). Nada de esto cuenta como gasto ni entra en tu Meta: tu meta de inversión se sigue como una disciplina, mes a mes.</p>`;
+  $('#app').innerHTML = html;
+  const n = $('#invNum'); if(n) contar(n, +n.dataset.v);
+  enlazarDisciplina($('#app'));
+  $$('[data-tk]').forEach(b => b.addEventListener('click', () => abrirTicker(b.dataset.tk)));
+}
+/** Historia de un activo: cada captura con su valor, cantidad y ganancia */
+function abrirTicker(t){
+  const { tc } = tcHoy(), S = v => v * tc;
+  const filas = PORTAFOLIO.filter(p => p.ticker === t).sort((a, b) => a.fecha - b.fecha);
+  if(!filas.length) return;
+  const p = filas[filas.length - 1], col = colorTicker(t), costo = p.valor - p.ganancia, total = posicionesPortafolio().reduce((a, x) => a + x.valor, 0);
+  const ult = filas.slice(-6), etq = f => f.fecha.getDate() + ' ' + MESES_CORTOS[f.fecha.getMonth()].toLowerCase();
+  const c = p.ganancia >= 0 ? TINTA.ok : TINTA.alto;
+  const html = `
+    <div>
+      <div class="hint">Vale hoy</div>
+      <div class="big md" id="tkNum">S/ ${fmtMonto(S(p.valor))}</div>
+      <div class="chips"><span class="chip">${fmtUsd(p.valor)}</span><span class="chip" style="color:${c}">${flecha(p.ganancia >= 0)} ${signo(p.ganancia)}${fmtUsd(Math.abs(p.ganancia))} · ${signo(p.ganancia)}${fmt1(Math.abs(p.gananciaPct))}%</span></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><span class="ml">Unidades</span><span class="mv">${fmtCant(p.cantidad)}</span></div>
+      <div class="metric"><span class="ml">Precio por unidad</span><span class="mv">$ ${p.cantidad ? (p.valor / p.cantidad).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span></div>
+      <div class="metric"><span class="ml">Costo</span><span class="mv">S/ ${fmtMonto(S(costo))}</span><span class="ms">${fmtUsd(costo)}</span></div>
+      <div class="metric"><span class="ml">Peso</span><span class="mv">${fmtPct(p.valor, total)}</span><span class="ms">del portafolio</span></div>
+    </div>
+    ${ult.length > 1 ? `<div style="display:flex;flex-direction:column;gap:8px"><div class="block-label">Valor en cada captura · en soles</div>${barrasV(ult.map((f, i) => ({ v: S(f.valor), label: etq(f), color: i === ult.length - 1 ? col : alpha(col, 0.3), on: i === ult.length - 1 })), 140)}</div>` : ''}
+    <div><div class="block-label">${filas.length} captura${filas.length === 1 ? '' : 's'} · de la más nueva a la más vieja</div>
+      <div class="list">${filas.slice().reverse().map(f => `<div class="row"><span class="main"><span class="name">${fechaCorta(f.fecha)}</span><span class="sub">${fmtCant(f.cantidad)} u.</span></span><span class="right"><span class="amt">$ ${fmt1(f.valor)}</span><span class="date" style="color:${f.ganancia >= 0 ? TINTA.ok : TINTA.alto}">${signo(f.ganancia)}$ ${fmt1(Math.abs(f.ganancia))} · ${signo(f.ganancia)}${fmt1(Math.abs(f.gananciaPct))}%</span></span></div>`).join('')}</div></div>`;
+  abrirHoja({ titulo: t, ruta: 'Inversiones', html, reabrir: () => abrirTicker(t),
+    enlazar: body => contar($('#tkNum', body), S(p.valor)) });
 }
 
 /* ============================================================
@@ -1667,7 +1923,7 @@ function paginaHistorial(){
 /* ============================================================
    Arranque
    ============================================================ */
-const PAGINAS = { inicio: paginaInicio, presupuesto: paginaPresupuesto, gastos: paginaGastos, compromisos: paginaCompromisos, historial: paginaHistorial };
+const PAGINAS = { inicio: paginaInicio, presupuesto: paginaPresupuesto, gastos: paginaGastos, inversiones: paginaInversiones, historial: paginaHistorial };
 /* v13: un monto nunca se parte en dos líneas ("S/" arriba y "2,062" abajo): el espacio después de
    S/ o $ se vuelve no separable en todo lo que se dibuja (pestañas, hojas, contadores). */
 const RE_MONEDA = /(S\/|\$) (?=[-\d])/g;
@@ -1693,6 +1949,8 @@ function cargar(data, info){
   // el presupuesto se sincroniza en cada respuesta del bot, incluso si los egresos no cambiaron
   // (algo muy común: edita la meta en Inicio y pasa a Gastos, que recarga la página)
   let presuCambio = false;
+  // v21: portafolio y tipo de cambio del día (el bot los manda junto con los egresos)
+  if(data){ PORTAFOLIO = parsePortafolio(data); HAY_HOJA_PORTAFOLIO = Array.isArray(data.portafolio); TC_BOT = tcDelBot(data) || TC_BOT; }
   // la copia guardada de los datos puede traer un presupuesto más viejo que el de este
   // dispositivo: solo manda la respuesta fresca del bot, y siempre encima van los pendientes
   if(data && data.presupuestos && info.origen === 'red' && !info.desdeCache){

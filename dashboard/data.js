@@ -5,6 +5,7 @@
 
 /* Endpoint del bot (Apps Script Web App). Devuelve {egresos:[...], prestamos:[...]}
    leidos EN VIVO del Google Sheets. La URL no cambia al redesplegar el Web App. */
+/* v21: también {portafolio:[...], tc} para la pestaña Inversiones (ver tools/bot-inversiones.gs) */
 const API_URL = "https://script.google.com/macros/s/AKfycbzc9z1Y0rLP4kfV-29biQ5MQkH1AxdAOF2IVz18nXpa3Zu4gymunMmCz-QyPlDkiFhFtw/exec";
 
 /* ---------- carga con copia local (abre al instante, luego refresca) ---------- */
@@ -19,7 +20,7 @@ function guardarCache(data){
 /* v11: la firma cubre TODOS los movimientos (antes solo los 5 últimos: si cambiabas la categoría de un
    gasto más antiguo, la respuesta fresca se descartaba y el cambio recién se veía en la siguiente carga). */
 function firmaDatos(data){
-  const txt = JSON.stringify([(data && data.egresos) || [], (data && data.prestamos) || []]);
+  const txt = JSON.stringify([(data && data.egresos) || [], (data && data.prestamos) || [], (data && data.portafolio) || []]);   // v21: una captura nueva del portafolio también cuenta
   let h = 5381;
   for(let i = 0; i < txt.length; i++) h = ((h << 5) + h + txt.charCodeAt(i)) | 0;
   return txt.length + ':' + h;
@@ -144,6 +145,34 @@ function parsePrestamos(data){
   })).filter(p => p.persona && p.original > 0);
   return lista.length ? lista : null;
 }
+/* ---------- v21: portafolio de inversiones (hoja Portafolio del bot, en dólares) ----------
+   Cada captura que mandas al bot agrega una fila por activo con la misma fecha. */
+/** Número en formato "2574.24" o 2574.24 (el portafolio viene con punto decimal, no con coma) */
+function parseNumPunto(v){
+  if(typeof v === 'number') return v;
+  const s = String(v == null ? '' : v).trim().replace(/[$\s%]/g, '');
+  if(/^-?\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+  if(/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) return parseFloat(s.replace(/,/g, ''));
+  return parseNumeroEs(s);
+}
+function parsePortafolio(data){
+  const filas = (data && data.portafolio) || [];
+  return filas.map(r => ({
+    fecha: fechaDeFila(r, 'Fecha'),
+    ticker: String(r['Ticker'] || '').trim().toUpperCase(),
+    cantidad: parseNumPunto(r['Cantidad']),
+    valor: parseNumPunto(r['ValorActual']),
+    ganancia: parseNumPunto(r['GananciaUSD']),
+    gananciaPct: parseNumPunto(r['GananciaPct'])
+  })).filter(p => p.fecha && p.ticker && p.valor > 0);
+}
+/** Tipo de cambio de hoy que manda el bot (dólar a soles); null si el bot todavía no lo envía */
+function tcDelBot(data){
+  const v = data && (data.tc || data.tipoCambio);
+  const n = typeof v === 'object' && v ? Number(v.valor || v.tc) : Number(v);
+  return n > 2 && n < 10 ? n : null;
+}
+
 /** Deduce préstamos desde Egresos cuando la hoja no está disponible (uno por gasto; se agrupan por persona al dibujar) */
 function prestamosDesdeEgresos(filas){
   return filas.filter(r => (r.cat1 === 'Finanzas' && r.cat2 === 'Préstamos') || r.cat1 === 'Terceros').map(r => ({
@@ -376,6 +405,7 @@ const SVG = {
   sol:'<path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/>',
   luna:'<path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"/>',
   temaAuto:'<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M12 3v18M12 9l4.65 -4.65M12 14.3l7.37 -7.37M12 19.6l8.85 -8.85"/>',
+  inversion:'<path d="M4 19h16M4 15l4 -6l4 3l4 -6l4 4"/>',
   sube:'<path d="M17 7l-10 10M8 7l9 0l0 9"/>',
   baja:'<path d="M7 7l10 10M17 8l0 9l-9 0"/>'
 };
@@ -480,15 +510,25 @@ function guardarFijosMarcados(l){ lsSet(FIJOS_KEY, JSON.stringify(l)); }
    si un guardado falla por falta de red, el valor no se pierde y se reintenta solo en la
    próxima carga de datos. */
 const PRESU_CLAVE_MARGEN = '__margen__';
+/* v21: lo que te propones invertir al mes (en dólares). Viaja al bot como una clave más, pero nunca
+   entra en la Meta: invertir no es gastar. */
+const PRESU_CLAVE_INVERSION = '__inversion__';
 const PRESU_CACHE_KEY = 'finanzas_presupuestos_v2';
 const PRESU_MIGRADO_KEY = 'finanzas_presu_migrado_v2';
-let PRESUPUESTOS = { categorias:{}, margen:0 };
+let PRESUPUESTOS = { categorias:{}, margen:0, inversion:0 };
+/** Saca la meta de inversión de las categorías (el bot la devuelve como una clave más) */
+function separarInversion(p){
+  const cats = Object.assign({}, (p && p.categorias) || {});
+  let inv = Number(p && p.inversion) || 0;
+  if(PRESU_CLAVE_INVERSION in cats){ inv = Number(cats[PRESU_CLAVE_INVERSION]) || 0; delete cats[PRESU_CLAVE_INVERSION]; }
+  return { categorias: cats, margen: Number(p && p.margen) || 0, inversion: inv };
+}
 
 function leerPresupuestosCache(){
   try{
     const v = JSON.parse(lsGet(PRESU_CACHE_KEY));
-    return (v && typeof v === 'object') ? { categorias: v.categorias || {}, margen: Number(v.margen) || 0 } : { categorias:{}, margen:0 };
-  }catch(e){ return { categorias:{}, margen:0 }; }
+    return (v && typeof v === 'object') ? separarInversion(v) : { categorias:{}, margen:0, inversion:0 };
+  }catch(e){ return { categorias:{}, margen:0, inversion:0 }; }
 }
 function guardarPresupuestosCache(p){ lsSet(PRESU_CACHE_KEY, JSON.stringify(p)); }
 
@@ -515,6 +555,7 @@ function sumaPresupuestosCategoria(){
 function leerMargen(){ return Number(PRESUPUESTOS.margen) || 0; }
 function leerMeta(){ const v = sumaPresupuestosCategoria() + leerMargen(); return v > 0 ? v : null; }
 function leerPresupuestosCat(){ return PRESUPUESTOS.categorias || {}; }
+function leerMetaInversion(){ return Number(PRESUPUESTOS.inversion) || 0; }
 
 /* Cambios que todavía no confirmó el bot. Viven en localStorage hasta que el bot responde, así
    un guardado no se pierde si cambias de pestaña (la página se recarga y el envío se corta) o si
@@ -539,16 +580,17 @@ function guardarPendientesPresu(p){ lsSet(PRESU_PEND_KEY, JSON.stringify(p)); }
 /** Lo que manda el bot + lo que aún no confirmó. Un pendiente gana solo si es MÁS NUEVO que lo que el
     bot tiene para esa clave; si el bot ya tiene ese valor o uno posterior, el pendiente se borra. */
 function aplicarPendientesPresu(p){
-  const out = { categorias: Object.assign({}, (p && p.categorias) || {}), margen: Number(p && p.margen) || 0 };
+  const out = separarInversion(p);
   const act = (p && p.actualizado) || null;   // null = bot anterior a v24 (sin fechas)
   const pend = leerPendientesPresu();
   let cambio = false;
   Object.keys(pend).forEach(c => {
     const m = pend[c].monto;
-    const enBot = c === PRESU_CLAVE_MARGEN ? out.margen : (Number(out.categorias[c]) || 0);
+    const enBot = c === PRESU_CLAVE_MARGEN ? out.margen : (c === PRESU_CLAVE_INVERSION ? out.inversion : (Number(out.categorias[c]) || 0));
     const tBot = act ? Number(act[c] || 0) : 0;
     if(act && (enBot === m || tBot >= pend[c].ts)){ delete pend[c]; cambio = true; return; }   // confirmado o superado
     if(c === PRESU_CLAVE_MARGEN) out.margen = m;
+    else if(c === PRESU_CLAVE_INVERSION) out.inversion = m;
     else if(m > 0) out.categorias[c] = m;
     else delete out.categorias[c];
   });
@@ -590,6 +632,13 @@ function guardarMargen(monto){
   PRESUPUESTOS.margen = monto;
   guardarPresupuestosCache(PRESUPUESTOS);
   sincronizarPresupuesto(PRESU_CLAVE_MARGEN, monto);
+}
+function guardarMetaInversion(monto){
+  monto = Number(monto) || 0;
+  if((Number(PRESUPUESTOS.inversion) || 0) === monto) return;
+  PRESUPUESTOS.inversion = monto;
+  guardarPresupuestosCache(PRESUPUESTOS);
+  sincronizarPresupuesto(PRESU_CLAVE_INVERSION, monto);
 }
 (function initPresupuestos(){
   reintentarPendientesPresu();   // primero lo que quedó sin confirmar de una visita anterior

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#101014">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Finanzas">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>/* tema antes de pintar: sin destello al abrir en modo día */(function(){var p='auto';try{p=localStorage.getItem('finanzas_tema')||'auto'}catch(e){}var t=p==='auto'?(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches?'claro':'oscuro'):p;document.documentElement.setAttribute('data-tema',t);})();</script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Inversiones · Finanzas</title>
+<link rel="preconnect" href="https://script.google.com">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="inversiones">
+<div class="wrap">
+  <header class="top" id="top"></header>
+  <main id="app"><div class="skel-wrap" role="status" aria-label="Cargando tus movimientos"><div class="skel hero"></div><div class="skel"></div><div class="skel"></div></div></main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});</script>
+</body>
+</html>
