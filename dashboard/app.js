@@ -1611,7 +1611,8 @@ function paginaHistorial(){
 /* ============================================================
    Arranque
    ============================================================ */
-const PAGINAS = { inicio: paginaInicio, presupuesto: paginaPresupuesto, gastos: paginaGastos, compromisos: paginaCompromisos, historial: paginaHistorial };
+/* piloto.html (body.apple) dibuja Inicio con la línea gráfica Apple de piloto-apple.js */
+const PAGINAS = { inicio: document.body.classList.contains('apple') && typeof paginaInicioApple === 'function' ? paginaInicioApple : paginaInicio, presupuesto: paginaPresupuesto, gastos: paginaGastos, compromisos: paginaCompromisos, historial: paginaHistorial };
 /* v13: un monto nunca se parte en dos líneas ("S/" arriba y "2,062" abajo): el espacio después de
    S/ o $ se vuelve no separable en todo lo que se dibuja (pestañas, hojas, contadores). */
 const RE_MONEDA = /(S\/|\$) (?=[-\d])/g;
