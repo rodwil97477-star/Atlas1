@@ -1,75 +1,79 @@
-"""Geometría del logo "381" (v2, 2026-10): numerales de trazo continuo en cursiva real
-y tres corrientes de brisa onduladas que pasan por detrás.
+"""Geometría del logo "381" (v3, 2026-10): numerales pixel en cursiva y ráfagas de brisa
+también en pixeles, que pasan con la cabeza brillante y la cola apagándose.
 
 Uso:  python3 tools/logo381.py
-Escribe logo-381.svg (maestro de los íconos) e imprime los trazados que usa
-logo381Html() en dashboard/app.js y logo-381.html. Todo vive en un tile de 200x200.
+Escribe logo-381.svg (maestro de los íconos), sus variantes maskable/apple y logo-381.html,
+e imprime el HTML que usa logo381Html() en dashboard/app.js. Todo vive en un tile de 200x200.
 Los PNG se rasterizan con tools/render_icons.mjs (Chromium vía Playwright).
 """
 import math, os
 
-BG, VERDE, CELESTE = '#101014', '#7CFA9E', '#5AC8FA'
-SK = -12                    # cursiva real (skewX), no rotación
-T = 13                      # grosor del trazo de los números
-H, W, SP = 84, 50, 13       # alto, ancho de dígito, separación
+BG, CELESTE = '#101014', '#5AC8FA'
+C = 7                       # lado de la celda pixel
+SK = -12                    # cursiva real (skewX)
 CX, CY = 104, 100           # centro óptico (el 1 es angosto: se corre 4 a la derecha)
-P = 100                     # periodo de la onda: el bucle animado se desplaza exactamente P
-BRISA = [                   # y, amplitud, fase, grosor, opacidad, duración del bucle (s)
-    (52, 4, 0.6, 2.6, .55, 11),
-    (148, 6, 2.4, 4.2, .95, 7.5),
-    (162, 4, 4.0, 2.4, .50, 9.5),
+DIGITOS = {                 # 6x10 con trazo de 2 celdas y esquinas recortadas
+    '3': ['#####.', '######', '....##', '....##', '.#####', '.#####', '....##', '....##', '######', '#####.'],
+    '8': ['.####.', '######', '##..##', '##..##', '.####.', '.####.', '##..##', '##..##', '######', '.####.'],
+    '1': ['.##', '###', '.##', '.##', '.##', '.##', '.##', '.##', '.##', '.##'],
+}
+ESPACIO = 2                 # celdas entre dígitos
+P, L = 15, 9                # periodo de las ráfagas y largo de cada una (celdas)
+ANCHO_CAPA = 200 + P * C    # la capa animada mide un tile + un periodo
+BRISA = [                   # fila, desfase, opacidad, paso de fila a mitad de ráfaga, duración (s)
+    (7, 5, .80, -1, 9.5),
+    (21, 0, 1.0, -1, 6.5),
+    (23, 9, .65, 1, 8),
 ]
 
 
-def _redondo(pts, r):
-    """Polilínea con esquinas redondeadas (curvas cuadráticas de radio r)."""
-    def hacia(ax, ay, bx, by, k):
-        L = math.hypot(bx - ax, by - ay); k = min(k, L / 2)
-        return ax + (bx - ax) * k / L, ay + (by - ay) * k / L
-    d = f'M{pts[0][0]:g} {pts[0][1]:g}'
-    for i in range(1, len(pts) - 1):
-        (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
-        a, b = hacia(x1, y1, x0, y0, r), hacia(x1, y1, x2, y2, r)
-        d += f'L{a[0]:g} {a[1]:g}Q{x1:g} {y1:g} {b[0]:g} {b[1]:g}'
-    return d + f'L{pts[-1][0]:g} {pts[-1][1]:g}'
+def _cuadros(celdas, lado, margen):
+    """Un solo `d` con un cuadrado por celda (x, y en unidades del tile)."""
+    s = lado - 2 * margen
+    return ''.join(f'M{x + margen:g} {y + margen:g}h{s:g}v{s:g}h{-s:g}z' for x, y in celdas)
 
 
-def numerales():
-    """Un solo `d` con 3, 8 y 1 (en coordenadas sin cursiva; la cursiva va en transform)."""
-    h2, r = T / 2, 10
-    x = CX - (W + SP + W + SP + 22) / 2; y = CY - H / 2
-    top, bot, mid = y + h2, y + H - h2, y + H / 2
-    l3, r3 = x + h2, x + W - h2
-    x8 = x + W + SP; l8, r8 = x8 + h2, x8 + W - h2
-    x1 = x + 2 * (W + SP) + 22 - h2
-    return ''.join([
-        _redondo([(l3, top), (r3, top), (r3, bot), (l3, bot)], r), f'M{l3 + 10:g} {mid:g}H{r3:g}',
-        _redondo([(l8, mid), (l8, top), (r8, top), (r8, bot), (l8, bot), (l8, mid - .01)], r), f'M{l8:g} {mid:g}H{r8:g}',
-        _redondo([(x1 - 13, top + 9), (x1, top), (x1, bot)], 6),
-    ])
+def celdas_numero():
+    ancho = sum(len(DIGITOS[k][0]) for k in '381') + 2 * ESPACIO
+    x, y0 = CX - ancho * C / 2, CY - 10 * C / 2
+    out = []
+    for k in '381':
+        for j, fila in enumerate(DIGITOS[k]):
+            out += [(x + i * C, y0 + j * C) for i, ch in enumerate(fila) if ch == '#']
+        x += (len(DIGITOS[k][0]) + ESPACIO) * C
+    return out
 
 
-def onda(y, A, fase, x0, x1):
-    """Onda de arcos cuadráticos encadenados (Q + T): periódica en P, así el bucle no tiene
-    costura. Arranca en un cruce por cero desplazado según la fase, antes de x0."""
-    inicio = -fase * P / (2 * math.pi)
-    while inicio > x0: inicio -= P
-    d, x = f'M{inicio:.1f} {y}Q{inicio + P / 4:.1f} {y - 2 * A} {inicio + P / 2:.1f} {y}', inicio + P / 2
-    while x < x1:
-        x += P / 2; d += f'T{x:.1f} {y}'
-    return d
+def rafagas(fila, desfase, sube, x_max):
+    """Celdas de una corriente agrupadas por posición dentro de la ráfaga (0 = cola, L-1 = cabeza).
+    El patrón se repite cada P celdas, así que desplazar la capa P celdas es un bucle sin costura."""
+    grupos = [[] for _ in range(L)]
+    for i in range(-P, math.ceil(x_max / C) + 1):
+        k = (i - desfase) % P
+        if k < L:
+            grupos[k].append((i * C, (fila + (sube if k >= L // 2 else 0)) * C))
+    return grupos
+
+
+def _corriente(fila, desfase, sube, x_max):
+    out = ''
+    for k, celdas in enumerate(rafagas(fila, desfase, sube, x_max)):
+        t = k / (L - 1)
+        color, alfa = ('#C8F6FF', 1) if k == L - 1 else (CELESTE, .18 + .82 * t ** 1.4)
+        out += f'<path d="{_cuadros(celdas, C, .7)}" fill="{color}" opacity="{alfa:.2f}"/>'
+    return out
 
 
 def transform_cursiva():
     return f'translate({CX} {CY}) skewX({SK}) translate({-CX} {-CY})'
 
 
-def defs(sfx=''):
-    return (f'<linearGradient id="l381n{sfx}" gradientUnits="userSpaceOnUse" x1="0" y1="{CY - H / 2:g}" x2="0" y2="{CY + H / 2:g}">'
-            f'<stop offset="0" stop-color="#A8FFC4"/><stop offset="1" stop-color="#5FEA89"/></linearGradient>'
-            f'<linearGradient id="l381b{sfx}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="{P}" y2="0" spreadMethod="repeat">'
-            f'<stop offset="0" stop-color="{CELESTE}" stop-opacity=".25"/><stop offset=".55" stop-color="{CELESTE}"/>'
-            f'<stop offset=".9" stop-color="#C8F6FF"/><stop offset="1" stop-color="{CELESTE}" stop-opacity=".25"/></linearGradient>')
+def _numero(sfx):
+    celdas = celdas_numero()
+    return (f'<linearGradient id="l381n{sfx}" gradientUnits="userSpaceOnUse" x1="0" y1="{CY - 5 * C:g}" x2="0" y2="{CY + 5 * C:g}">'
+            f'<stop offset="0" stop-color="#A8FFC4"/><stop offset="1" stop-color="#5FEA89"/></linearGradient>',
+            f'<g transform="{transform_cursiva()}"><path class="logo381__halo" fill="{BG}" d="{_cuadros(celdas, C, -2.5)}"/>'
+            f'<path fill="url(#l381n{sfx})" d="{_cuadros(celdas, C, -.15)}"/></g>')
 
 
 def svg(fondo='redondo', escala=1.0):
@@ -78,31 +82,29 @@ def svg(fondo='redondo', escala=1.0):
     tile = {'redondo': f'<rect width="200" height="200" rx="44" fill="{BG}"/>',
             'lleno': f'<rect width="200" height="200" fill="{BG}"/>'}[fondo]
     fade = ('<linearGradient id="f" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/>'
-            '<stop offset=".22" stop-color="#fff"/><stop offset=".78" stop-color="#fff"/>'
+            '<stop offset=".2" stop-color="#fff"/><stop offset=".8" stop-color="#fff"/>'
             '<stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>'
             '<mask id="m"><rect width="200" height="200" fill="url(#f)"/></mask>')
-    ondas = ''.join(f'<path d="{onda(y, A, f, -8, 208)}" stroke-width="{t}" opacity="{o}"/>' for y, A, f, t, o, _ in BRISA)
-    d = numerales()
+    grad, num = _numero('')
+    capas = ''.join(f'<g opacity="{o}">' + _corriente(f, d, s, 200) + '</g>' for f, d, o, s, _t in BRISA)
     k = f'translate(100 100) scale({escala}) translate(-100 -100)'
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs>{defs()}{fade}</defs>{tile}'
-            f'<g transform="{k}"><g mask="url(#m)" fill="none" stroke="url(#l381b)" stroke-linecap="round">{ondas}</g>'
-            f'<g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="{transform_cursiva()}">'
-            f'<path d="{d}" stroke="{BG}" stroke-width="{T + 9}"/><path d="{d}" stroke="url(#l381n)" stroke-width="{T}"/></g></g></svg>')
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs>{grad}{fade}</defs>{tile}'
+            f'<g transform="{k}"><g mask="url(#m)">{capas}</g>{num}</g></svg>')
 
 
 def html(sfx=''):
-    """Logo animado para la cabecera: cada onda es su propia capa de 300x200 (150% del tile)
-    que CSS desplaza exactamente un periodo; los números quedan quietos encima."""
+    """Logo animado: cada corriente es su propia capa (un tile + un periodo de ancho) que CSS
+    desplaza exactamente un periodo; el número queda quieto encima."""
+    pct = 100 * ANCHO_CAPA / 200
     ondas = ''.join(
-        f'<svg class="logo381__onda" viewBox="0 0 300 200" style="--t:{dur}s;--o:{o}">'
-        f'<path d="{onda(y, A, f, -4, 304)}" stroke="url(#l381b{sfx})" stroke-width="{t}"/></svg>'
-        for y, A, f, t, o, dur in BRISA)
-    d = numerales()
-    return (f'<div class="logo381" role="img" aria-label="381">'
+        f'<svg class="logo381__onda" viewBox="0 0 {ANCHO_CAPA} 200" style="--t:{t}s;--o:{o}">'
+        f'{_corriente(f, d, s, ANCHO_CAPA)}</svg>'
+        for f, d, o, s, t in BRISA)
+    grad, num = _numero(sfx)
+    return (f'<div class="logo381" role="img" aria-label="381" style="--capa:{pct:g}%;--paso:{-100 * P * C / ANCHO_CAPA:.4f}%">'
             f'<div class="logo381__brisa" aria-hidden="true">{ondas}</div>'
-            f'<svg class="logo381__num" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><defs>{defs(sfx)}</defs>'
-            f'<g transform="{transform_cursiva()}"><path class="logo381__halo" d="{d}" stroke-width="{T + 9}"/>'
-            f'<path d="{d}" stroke="url(#l381n{sfx})" stroke-width="{T}"/></g></svg></div>')
+            f'<svg class="logo381__num" viewBox="0 0 200 200" aria-hidden="true" focusable="false">'
+            f'<defs>{grad}</defs>{num}</svg></div>')
 
 
 if __name__ == '__main__':

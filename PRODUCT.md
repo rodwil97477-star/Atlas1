@@ -35,7 +35,7 @@ Built around his own categorisation tree (cat1 > cat2 > cat3), his bot, and his 
 
 ## Brand Commitments
 
-- Personal brand "381": continuous-stroke numerals with rounded corners in a true -12 degree italic, green `#7CFA9E` gradient on near-black `#101014`, with three celeste breeze currents passing behind (redesigned 2026-10, replacing the earlier pixel/dot-matrix mark). Animated logo lives in the header (34x34, radius 10) and on the gate; icons are generated from the same geometry (`tools/logo381.py`).
+- Personal brand "381": bold pixel numerals (6x10 cells, 2-cell stroke, clipped corners) in a true -12 degree italic, green `#7CFA9E` gradient on near-black `#101014`, with pixel breeze gusts in celeste passing behind (bright head, fading tail). Redesigned 2026-10 from the original dot-matrix mark; the user asked to keep it pixel. Animated logo lives in the header (34x34, radius 10) and on the gate; icons are generated from the same geometry (`tools/logo381.py`).
 - Confirmed by the user (2026-10-03): the whole app adopts the 381 identity, dark-only.
 - User preference (2026-10): favourite colour is blue; the interface accent is a light sky blue (celeste). Green, yellow and red are reserved for the on-pace / tight / over traffic light. The logo keeps its green.
 - User preference (2026-10): keeps the original (v13) animations and their slower timings, including live details such as the pinging newest chart point.

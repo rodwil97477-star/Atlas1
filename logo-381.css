@@ -1,6 +1,6 @@
-/* Logo 381 (v2): números quietos y tres corrientes de brisa que pasan por detrás.
-   Cada onda es una capa 1.5x más ancha que el tile y se desplaza exactamente un periodo
-   (33.333% de su ancho), así el bucle no tiene costura. Solo CSS `animation` sobre
+/* Logo 381 (v3): número pixel quieto y tres corrientes de ráfagas pixel que pasan por detrás.
+   Cada corriente es una capa de un tile + un periodo de ancho (--capa) que se desplaza
+   exactamente un periodo (--paso), así el bucle no tiene costura. Solo CSS `animation` sobre
    transform + opacity: compositor, sin JS. La regla global de prefers-reduced-motion
    las congela en su pose base, que es idéntica al ícono estático. */
 .logo381{
@@ -11,16 +11,16 @@
 }
 .logo381__brisa{
   position:absolute; inset:0;
-  -webkit-mask-image:linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
-          mask-image:linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+          mask-image:linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
 }
 .logo381__onda{
-  position:absolute; top:0; left:0; width:150%; height:100%; display:block; overflow:visible;
-  fill:none; stroke-linecap:round; opacity:var(--o);
+  position:absolute; top:0; left:0; width:var(--capa); height:100%; display:block; overflow:visible;
+  opacity:var(--o);
   animation:logo381-brisa var(--t) linear infinite, logo381-soplo calc(var(--t) * .62) ease-in-out infinite;
   will-change:transform, opacity;
 }
-@keyframes logo381-brisa{ from{ transform:translateX(-33.3333%); } to{ transform:translateX(0); } }
-@keyframes logo381-soplo{ 0%,100%{ opacity:var(--o); } 50%{ opacity:calc(var(--o) * .45); } }
-.logo381__num{ position:absolute; inset:0; width:100%; height:100%; display:block; fill:none; stroke-linecap:round; stroke-linejoin:round; }
-.logo381__halo{ stroke:var(--logo381-bg); }
+@keyframes logo381-brisa{ from{ transform:translateX(var(--paso)); } to{ transform:translateX(0); } }
+@keyframes logo381-soplo{ 0%,100%{ opacity:var(--o); } 50%{ opacity:calc(var(--o) * .55); } }
+.logo381__num{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.logo381__halo{ fill:var(--logo381-bg); }
