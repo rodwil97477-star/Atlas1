@@ -681,14 +681,14 @@ function hojaDetalle(opt){
   }
   /* v19: en un medio de pago, cuánto fue con crédito y cuánto con débito */
   let tipos = '';
+  const nombreTipo = r => { const t = norm(r.tipo || ''); return t === 'credito' ? 'Crédito' : (t === 'debito' ? 'Débito' : (r.tipo ? r.tipo.replace(/^./, c => c.toUpperCase()) : 'Sin tipo')); };
   if(opt.tipos && delMes.length){
-    const nombreTipo = r => { const t = norm(r.tipo || ''); return t === 'credito' ? 'Crédito' : (t === 'debito' ? 'Débito' : (r.tipo ? r.tipo.replace(/^./, c => c.toUpperCase()) : 'Sin tipo')); };
     const COL_TIPO = { 'Crédito': TINTA.warn, 'Débito': TINTA.accent, 'Sin tipo': TINTA.neutro };
     const ORDEN = ['Crédito', 'Débito'], pos = t => { const i = ORDEN.indexOf(t); return i < 0 ? 9 : i; };
     const gt = agrupar(delMes, nombreTipo).sort((x, y) => pos(x.clave) - pos(y.clave)), tot = suma(delMes);
     const partes = gt.map(g => ({ n: g.clave, v: g.total, color: COL_TIPO[g.clave] || TINTA.neutro }));
     tipos = `<div><div class="block-label">Crédito y débito</div>${stackBar(partes)}
-      <div class="list">${gt.map(g => `<div class="row"><span class="tile sm" style="background:${alpha(COL_TIPO[g.clave] || TINTA.neutro, 0.16)}">${svg('card', 16, COL_TIPO[g.clave] || TINTA.neutro)}</span><span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} mov.${g.clave === 'Crédito' ? ' · se paga con el estado de cuenta' : ''}</span></span><span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span><span class="date">${fmtPct(g.total, tot)}</span></span></div>`).join('')}</div></div>`;
+      <div class="list">${gt.map(g => `<button class="row" data-tipo="${escapeHtml(g.clave)}"><span class="tile sm" style="background:${alpha(COL_TIPO[g.clave] || TINTA.neutro, 0.16)}">${svg('card', 16, COL_TIPO[g.clave] || TINTA.neutro)}</span><span class="main"><span class="name">${escapeHtml(g.clave)}</span><span class="sub">${g.n} mov.${g.clave === 'Crédito' ? ' · se paga con el estado de cuenta' : ''}</span></span><span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span><span class="date">${fmtPct(g.total, tot)}</span></span>${chev()}</button>`).join('')}</div></div>`;
   }
   const subMov = opt.subMov || (r2 => [opt.subFila ? opt.subFila(r2) : r2.cat3, r2.medio].filter(Boolean).join(' · '));
   let comp = '';
@@ -705,6 +705,7 @@ function hojaDetalle(opt){
       <div class="chips">${deltaChip(actual, anterior, 'vs ' + monthShort(prev))}<span class="chip">prom. <b>S/ ${fmtMonto(prom)}</b></span><span class="chip">${textoTendencia(tend.pendiente, prom)}</span></div>
     </div>
     ${opt.presupuestoCat ? '<div id="presuCatWrap"></div>' : ''}
+    ${opt.extra || ''}
     ${tipos}
     <div style="display:flex;flex-direction:column;gap:8px">
       <div class="block-label">Últimos ${meses.length} meses</div>
@@ -731,11 +732,25 @@ function hojaDetalle(opt){
       const fuentes = {}; if(ids[0]) fuentes[ids[0]] = { filas: delMes, render: r => filaMov(r, { sub: subMov }) };
       enlazarMas(body, fuentes);
       $$('[data-sub]', body).forEach(b => b.addEventListener('click', () => opt.componer.abrir(b.dataset.sub)));
+      $$('[data-com]', body).forEach(b => b.addEventListener('click', () => abrirComercio(b.dataset.com)));
+      // v21: tocar Crédito o Débito muestra los consumos de esa modalidad en el mes
+      $$('[data-tipo]', body).forEach(b => b.addEventListener('click', () => abrirTipoMedio(opt.titulo, b.dataset.tipo, delMes.filter(r => nombreTipo(r) === b.dataset.tipo), opt.color)));
     }
   });
 }
+/** v21: los consumos de un medio de pago con una modalidad (crédito, débito) en el mes elegido */
+function abrirTipoMedio(medio, tipo, filas, color){
+  filas = filas.slice().sort((a, b) => b.fecha - a.fecha);
+  const html = `<div><div class="hint">${tipo} · ${monthLabel(MES)}</div><div class="big md" id="tipoNum">S/ ${fmtMonto(suma(filas))}</div>
+      <div class="chips"><span class="chip">${filas.length} consumo${filas.length === 1 ? '' : 's'}</span>${tipo === 'Crédito' ? '<span class="chip">se paga con el estado de cuenta</span>' : ''}</div></div>
+    <div><div class="block-label">De la más reciente a la más antigua</div><div class="list">${filas.map(r => filaMov(r)).join('') || '<div class="empty">Sin consumos.</div>'}</div></div>`;
+  abrirHoja({ titulo: tipo, ruta: medio, colorRuta: color, html, reabrir: () => abrirTipoMedio(medio, tipo, filas, color),
+    enlazar: body => contar($('#tipoNum', body), suma(filas)) });
+}
 function abrirCat2(cat1, cat2){
+  const fijos = cat2 === 'Fijo' ? fijosDelMes(MES) : [];
   hojaDetalle({
+    extra: fijos.length ? panelFijos(MES, fijos, true) : '',
     titulo: cat2, ruta: cat1, colorRuta: colorDe(cat1, 1), icono: cat2, color: colorDe(cat2, 2),
     filtro: r => r.cat1 === cat1 && (r.cat2 || '(sin definir)') === cat2,
     presupuestoCat: cat2,
@@ -1046,7 +1061,8 @@ function paginaGastos(){
   // v21: los avisos de Inicio pueden llevar directo a una sección (fijos, comercios)
   let ir = null; try{ ir = new URLSearchParams(location.search).get('ir'); }catch(e){}
   const dest = ir && document.getElementById(ir);
-  if(dest && !paginaGastos._fue){ paginaGastos._fue = 1; requestAnimationFrame(() => dest.scrollIntoView({ block:'start', behavior: REDUCIR_MOVIMIENTO ? 'auto' : 'smooth' })); if(ir === 'fijos'){ const d = $('details', dest); if(d) d.open = true; } }
+  if(ir === 'fijos' && !paginaGastos._fue){ paginaGastos._fue = 1; const f = ALL.find(r => r.cat2 === 'Fijo') || (fijosDelMes(MES)[0] || {}).ref; if(f) abrirCat2(f.cat1, 'Fijo'); }
+  else if(dest && !paginaGastos._fue){ paginaGastos._fue = 1; requestAnimationFrame(() => dest.scrollIntoView({ block:'start', behavior: REDUCIR_MOVIMIENTO ? 'auto' : 'smooth' })); }
 }
 function dibujarVista(cambio){
   const cont = $('#gVista'); if(!cont) return;
@@ -1083,7 +1099,7 @@ function vistaCategorias(k, filas){
   let subs = '';
   const maxC2 = Math.max(...agrupar(filas, r => r.cat1 + '|' + (r.cat2 || '(sin definir)')).map(g => g.total), 1);
   const presus = leerPresupuestosCat();
-  // v21: los gastos fijos (antes en Compromisos) se abren debajo de la fila Fijo
+  // v21: los gastos fijos (antes en Compromisos) se ven al entrar a la fila Fijo
   const fijos = fijosDelMes(k);
   let fijosPuestos = false;
   c1.forEach(g1 => {
@@ -1097,23 +1113,23 @@ function vistaCategorias(k, filas){
       // v17: aquí la barra es solo el tamaño de cada subcategoría; el semáforo del presupuesto vive en la pestaña Presupuesto
       const pct = g.total / maxC2 * 100;
       const sobrePresu = presu && g.total > presu;
-      const sub = `<span class="sub">${g.n} mov.${dt ? ' · ' + dt : ''}</span>`;
+      const sub = `<span class="sub">${g.n} mov.${dt ? ' · ' + dt : ''}</span>`;   // v21: los cobros fijos se ven al entrar a Fijo
       const derecha = `<span class="right"><span class="amt">S/ ${fmtMonto(g.total)}</span>${presu ? `<span class="date" style="color:${sobrePresu ? TINTA.alto : 'var(--label-3)'};font-weight:${sobrePresu ? 700 : 500}">de S/ ${fmtMonto(presu)}</span>` : ''}</span>`;
-      const panel = g.clave === 'Fijo' && fijos.length && !fijosPuestos ? (fijosPuestos = true, panelFijos(k, fijos)) : '';
-      return `<button class="row" data-c1="${escapeHtml(g1.clave)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, col)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span>${sub}<span class="track row-track"><span class="gx" style="--i:${i};width:${pct.toFixed(1)}%;background:${col}"></span></span></span>${derecha}${chev()}</button>${panel}`;
+      if(g.clave === 'Fijo') fijosPuestos = true;
+            return `<button class="row" data-c1="${escapeHtml(g1.clave)}" data-c2="${escapeHtml(g.clave)}">${tile(g.clave, col)}<span class="main"><span class="name">${escapeHtml(g.clave)}</span>${sub}<span class="track row-track"><span class="gx" style="--i:${i};width:${pct.toFixed(1)}%;background:${col}"></span></span></span>${derecha}${chev()}</button>`;
     }).join('') + '</div>';
     subs += `<div class="cat-group">${grupo}</div>`;
   });
   // si este mes todavía no se pagó ningún fijo, igual se ve lo que falta
-  if(fijos.length && !fijosPuestos) subs += `<div class="cat-group"><div class="group-h">${icono('Fijo', colorDe('Fijo', 2), 15, 2.2)}<span>Fijo</span><span>S/ 0</span></div><div class="list">${panelFijos(k, fijos)}</div></div>`;
+  if(fijos.length && !fijosPuestos){ const c1f = fijos[0].ref.cat1; subs += `<div class="cat-group"><div class="group-h">${icono(c1f, colorDe(c1f, 1), 15, 2.2)}<span>${escapeHtml(c1f)}</span><span>S/ 0</span></div><div class="list"><button class="row" data-c1="${escapeHtml(c1f)}" data-c2="Fijo">${tile('Fijo', colorDe('Fijo', 2))}<span class="main"><span class="name">Fijo</span><span class="sub">${fijos.length} cobro${fijos.length === 1 ? '' : 's'} por pagar</span></span><span class="right"><span class="amt">S/ 0</span></span>${chev()}</button></div></div>`; }
   return card(`${head('Reparto por categoría', `<span class="hint">${c1.length} categoría${c1.length === 1 ? '' : 's'}</span>`)}<div class="donut-row">${donutSVG(partes, 'S/ ' + fmtCorto(total), null, 'donutTotal')}${leyenda(partes)}</div><span class="tap-hint hint">toca una categoría para verla en la dona</span>`, 'wide')
        + card(`${head('Subcategorías', Object.keys(presus).length ? `<a class="more" data-nav="presupuesto.html" href="presupuesto.html?mes=${k}">Ver presupuesto ${chev()}</a>` : '<span class="hint hint-tap">toca para ver el detalle</span>')}<div class="sub-cols">${subs}</div>`, 'tight wide')
        + vistaComercios(k, filas)
        + cardHormiga(k, filas)
        + vistaMedios(k, filas);
 }
-/** v21: lo que se veía en Compromisos > Gastos fijos, compacto bajo la fila Fijo: avance, línea del mes y la lista */
-function panelFijos(k, fijos){
+/** v21: lo que se veía en Compromisos > Gastos fijos, dentro de la hoja de Fijo: avance, línea del mes y la lista */
+function panelFijos(k, fijos, abierto){
   const pag = fijos.filter(f => f.pagado), pend = fijos.filter(f => !f.pagado);
   const sPag = pag.reduce((a, f) => a + f.monto, 0), sPend = pend.reduce((a, f) => a + f.monto, 0);
   const pct = sPag + sPend > 0 ? sPag / (sPag + sPend) * 100 : 0;
@@ -1122,7 +1138,7 @@ function panelFijos(k, fijos){
     <div class="track fx-track"><span class="gx" style="width:${pct.toFixed(1)}%;background:var(--down)"></span></div>
     <span class="hint">S/ ${fmtMonto(sPag)} pagados de S/ ${fmtMonto(sPag + sPend)}${pend.length ? ` · falta${pend.length === 1 ? '' : 'n'} ${pend.length}` : ''}</span>
     ${lineaCobros(k, fijos)}
-    <details class="fx-det"><summary><span class="ver">Ver los ${fijos.length} cobros</span><span class="ocultar">Ocultar cobros</span><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG.down}</svg></summary>
+    <details class="fx-det"${abierto ? ' open' : ''}><summary><span class="ver">Ver los ${fijos.length} cobros</span><span class="ocultar">Ocultar cobros</span><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG.down}</svg></summary>
       <div class="list">${fijos.map(f => `<button class="row" data-com="${escapeHtml(f.nombre)}"><span class="tile sm" style="background:${f.pagado ? 'var(--down-soft)' : 'var(--warn-soft)'}">${svg(f.pagado ? 'check' : 'clock', 16, f.pagado ? 'var(--down)' : 'var(--warn)')}</span><span class="main"><span class="name">${escapeHtml(f.nombre)}</span><span class="sub" style="color:${f.pagado ? 'var(--down)' : 'var(--warn)'};font-weight:600;white-space:normal">${f.estado}</span></span><span class="right"><span class="amt">S/ ${fmtSol(f.monto)}</span><span class="date">${escapeHtml(f.ref.cat3 || f.ref.cat2)}${f.marcado ? ' · marcado' : ''}</span></span></button>`).join('')}</div>
     </details>
   </div>`;
@@ -1775,13 +1791,15 @@ function paginaInversiones(){
   /* hacia dónde vas si mantienes el ritmo */
   const aporteMensual = meta || (conAp ? totU / meses.length : 0);
   if(valor > 0 || aporteMensual > 0){
-    const r = RENDIMIENTO_SUPUESTO / 12, fv = n => valor * Math.pow(1 + r, n) + aporteMensual * (Math.pow(1 + r, n) - 1) / r;
-    const plazos = [[12, '1 año'], [60, '5 años'], [120, '10 años']];
-    const pon10 = valor + aporteMensual * 120;
+    // v21: se proyecta con el rendimiento que tiene hoy tu portafolio (ganancia sobre lo invertido); sin portafolio, 7% anual
+    const anual = costo > 0 ? gan / costo : RENDIMIENTO_SUPUESTO, r = anual / 12;
+    const fv = n => Math.abs(r) < 1e-9 ? valor + aporteMensual * n : valor * Math.pow(1 + r, n) + aporteMensual * (Math.pow(1 + r, n) - 1) / r;
+    const plazos = [[12, '1 año'], [60, '5 años'], [120, '10 años'], [180, '15 años']];
+    const pon15 = valor + aporteMensual * 180, crec = fv(180) - pon15;
     html += card(`${head('Hacia dónde vas', `<span class="hint">aportando ${fmtUsd(aporteMensual)} al mes</span>`)}
       <div class="metrics">${plazos.map(([n, t]) => `<div class="metric"><span class="ml">En ${t}</span><span class="mv">S/ ${fmtMonto(S(fv(n)))}</span><span class="ms">${fmtUsd(fv(n))}</span></div>`).join('')}</div>
-      <p class="insight" style="margin:0">En 10 años, <b>S/ ${fmtMonto(S(pon10))}</b> serían lo que pusiste${valor > 0 ? ' (incluye lo que ya tienes)' : ''} y unos <b>S/ ${fmtMonto(S(fv(120) - pon10))}</b> el crecimiento.</p>
-      <span class="hint">Estimado con ${Math.round(RENDIMIENTO_SUPUESTO * 100)}% anual, un promedio histórico de largo plazo; no es una promesa. Al tipo de cambio de hoy.</span>`, 'wide');
+      <p class="insight" style="margin:0">En 15 años, <b>S/ ${fmtMonto(S(pon15))}</b> serían lo que pusiste${valor > 0 ? ' (incluye lo que ya tienes)' : ''} y unos <b>S/ ${fmtMonto(S(Math.abs(crec)))}</b> ${crec >= 0 ? 'el crecimiento' : 'la pérdida'}.</p>
+      <span class="hint">${costo > 0 ? `Estimado con el rendimiento de tu portafolio hoy, ${signo(anual)}${fmt1(Math.abs(anual * 100))}% al año` : `Estimado con ${Math.round(RENDIMIENTO_SUPUESTO * 100)}% anual, un promedio histórico de largo plazo, hasta que mandes tu primera captura`}; no es una promesa. Al tipo de cambio de hoy.</span>`, 'wide');
   }
 
   html += `<p class="note">El portafolio sale de la última captura de cada activo que le mandaste al bot (hoja Portafolio, en dólares) y se pasa a soles con el tipo de cambio ${tcTxt === 'de hoy' ? 'de hoy' : 'más reciente que hay'}. Los aportes son tus movimientos de Finanzas › Inversiones y Ahorro (el fondo de emergencia va aparte). Nada de esto cuenta como gasto ni entra en tu Meta: tu meta de inversión se sigue como una disciplina, mes a mes.</p>`;
