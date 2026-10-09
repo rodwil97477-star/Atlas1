@@ -3,7 +3,7 @@
    Archivo NUEVO: no modifica ni reemplaza nada del dashboard. Se activa solo en la
    pestaña Inversiones y agrega una tarjeta con el botón "Analizar portafolio". Al tocarlo
    corre el mismo análisis que /detalle del bot y se despliega un chat para preguntar.
-   Usa los colores, tipografías y componentes del dashboard (variables CSS, modo día/noche).
+   Usa la cabecera, los textos, botones, campos y animaciones del dashboard (modo día/noche incluido).
    Habla con el bot por la misma URL (API_URL) con accion 'consultarIA'. La clave se crea
    con /claveia en Telegram y se pega una sola vez en cada dispositivo.
    ============================================================ */
@@ -45,23 +45,8 @@
 
   /* ---------- estilos (solo clases .ia-*, con las variables del dashboard) ---------- */
   var css = [
-    '.ia-card{ position:relative; overflow:hidden; }',
-    '.ia-card::before{ content:""; position:absolute; inset:0 0 auto 0; height:120px; pointer-events:none; background:radial-gradient(110% 100% at 100% 0%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 70%); }',
-    '.ia-card > *{ position:relative; }',
-    '.ia-top{ display:flex; align-items:center; gap:12px; }',
-    '.ia-ic{ width:38px; height:38px; border-radius:50%; flex-shrink:0; display:grid; place-items:center; background:var(--accent-soft-2); color:var(--accent); }',
-    '.ia-ic svg{ display:block; }',
-    '.ia-top-t{ display:flex; flex-direction:column; gap:1px; min-width:0; }',
-    '.ia-top-t .card-title{ line-height:1.2; }',
-    '.ia-lead{ margin:0; font-size:15px; line-height:1.45; color:var(--label-2); text-wrap:pretty; }',
-    '.ia-go{ align-self:stretch; justify-content:center; width:100%; }',
-    '.ia-go svg{ flex-shrink:0; }',
     '.ia-key{ display:flex; flex-direction:column; gap:10px; }',
-    '.ia-key .ap-form input, .ia-in{ letter-spacing:0; }',
-    /* el panel del chat se despliega con la altura animada (0fr → 1fr) */
-    '.ia-fold{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .55s var(--ease-drawer); }',
-    '.ia-fold.on{ grid-template-rows:1fr; }',
-    '.ia-fold > div{ overflow:hidden; min-height:0; }',
+    '.ia-foot .more.mute{ color:var(--label-3); }',
     '.ia-chat{ display:flex; flex-direction:column; gap:12px; padding-top:2px; }',
     '.ia-meta{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12.5px; color:var(--label-3); letter-spacing:0; }',
     '.ia-log{ display:flex; flex-direction:column; gap:10px; max-height:min(62vh, 560px); overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:2px 0 4px; scroll-behavior:smooth; }',
@@ -85,21 +70,18 @@
     '.ia-chip:active{ transform:scale(.97); }',
     '.ia-chip:disabled{ opacity:.45; cursor:default; }',
     '.ia-send{ display:flex; gap:8px; align-items:center; }',
-    '.ia-in{ flex:1; min-width:0; min-height:46px; border-radius:23px; border:0; background:var(--sunken); color:var(--label); padding:0 16px; font:16px var(--font-ui); caret-color:var(--accent); }',
+    '.ia-in{ flex:1; min-width:0; min-height:44px; border-radius:22px; border:1px solid var(--edge); background:var(--sunken); color:var(--label); padding:0 16px; font:16px var(--font-ui); caret-color:var(--accent); transition:border-color .2s ease; }',
     '.ia-in::placeholder{ color:var(--label-3); }',
-    '.ia-in:focus{ outline:2px solid var(--accent); outline-offset:0; }',
-    '.ia-sb{ width:46px; height:46px; border-radius:50%; border:0; flex-shrink:0; display:grid; place-items:center; background:var(--accent); color:var(--accent-ink); cursor:pointer; transition:transform .16s var(--ease-out), opacity .2s ease; }',
+    '.ia-in:focus{ outline:none; border-color:var(--accent); }',
+    '.ia-sb{ width:44px; height:44px; border-radius:50%; border:0; flex-shrink:0; display:grid; place-items:center; background:var(--accent); color:var(--accent-ink); cursor:pointer; transition:transform .16s var(--ease-out), opacity .2s ease; }',
     '.ia-sb:active{ transform:scale(.92); }',
     '.ia-sb:disabled{ opacity:.4; cursor:default; }',
     '.ia-foot{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:2px 12px; }',
-    '.ia-link{ border:0; background:none; padding:8px 0; min-height:36px; color:var(--accent); font:400 14px var(--font-ui); cursor:pointer; }',
-    '.ia-link.mute{ color:var(--label-3); }',
-    '.ia-cap{ margin:0; font-size:12.5px; line-height:1.45; color:var(--label-3); letter-spacing:0; text-wrap:pretty; }',
+    '.ia-cap{ margin:0; line-height:1.45; text-wrap:pretty; }',
     '.ia-msg-err{ margin:0; font-size:13.5px; font-weight:600; color:var(--alto); }',
     '@keyframes iaIn{ from{ opacity:0; transform:translateY(8px) scale(.985); } to{ opacity:1; transform:none; } }',
     '@keyframes iaDot{ 0%,80%,100%{ opacity:.25; transform:translateY(0); } 40%{ opacity:1; transform:translateY(-3px); } }',
-    '@media (min-width:1150px){ .ia-card{ grid-column:1 / -1; } }',
-    '@media (prefers-reduced-motion: reduce){ .ia-fold{ transition:none; } .ia-log{ scroll-behavior:auto; } }'
+    '@media (prefers-reduced-motion: reduce){ .ia-log{ scroll-behavior:auto; } }'
   ].join('\n');
   var estilo = document.createElement('style'); estilo.id = 'ia-css'; estilo.textContent = css; document.head.appendChild(estilo);
 
@@ -113,7 +95,8 @@
     s.setAttribute('stroke-width', '2'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.setAttribute('aria-hidden', 'true');
     var p = document.createElementNS(SVG_NS, 'path'); p.setAttribute('d', d); s.appendChild(p); return s;
   }
-  var D_CHISPA = 'M12 2.5l1.9 5.6a3 3 0 0 0 1.9 1.9l5.6 1.9-5.6 1.9a3 3 0 0 0-1.9 1.9L12 21.5l-1.9-5.8a3 3 0 0 0-1.9-1.9L2.5 11.9l5.7-1.9a3 3 0 0 0 1.9-1.9L12 2.5z';
+  // mismo trazo que los íconos de la app (Tabler, línea de 2px): "sparkles"
+  var D_CHISPA = 'M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z';
   var D_ENVIAR = 'M12 19V5M5 12l7-7 7 7';
   var TAGS = { 'HECHO':'t-hecho', 'EXPECTATIVA':'t-expect', 'INFERENCIA':'t-infer', 'RUMOR':'t-rumor' };
 
@@ -199,26 +182,23 @@
   function borrar(){ st.msgs = []; st.ts = 0; st.error = ''; st.abierto = false; lsDel(LS_CHAT); dibujar(); }
 
   /* ---------- tarjeta ---------- */
-  var raiz = el('section', 'card ia-card wide'); raiz.id = 'iaCard'; raiz.setAttribute('aria-label', 'Asesor IA del portafolio');
+  var raiz = el('section', 'card ia-card wide view-in'); raiz.id = 'iaCard'; raiz.setAttribute('aria-label', 'Asesor IA del portafolio');
   var fold = null, log = null, input = null;
 
   function cabecera(){
-    var top = el('div', 'ia-top');
-    var ic = el('span', 'ia-ic'); ic.appendChild(icono(D_CHISPA, 20, true));
-    var t = el('div', 'ia-top-t');
-    t.appendChild(el('h2', 'card-title', 'Asesor IA'));
-    t.appendChild(el('span', 'hint', 'Gemini · con búsqueda en la web'));
-    top.appendChild(ic); top.appendChild(t);
+    var top = el('div', 'card-head');
+    top.appendChild(el('h2', 'card-title', 'Asesor IA'));
+    top.appendChild(el('span', 'hint', 'Gemini · con búsqueda en la web'));
     return top;
   }
 
   function formClave(){
     var f = el('div', 'ia-key');
-    f.appendChild(el('p', 'ia-lead', 'Para usar la IA, escribe /claveia en tu bot de Telegram y pega aquí la clave que te manda. Se pide una sola vez en este dispositivo.'));
-    var form = el('form', 'ap-form'); form.setAttribute('autocomplete', 'off');
+    f.appendChild(el('p', 'msg', 'Para usar la IA, escribe /claveia en tu bot de Telegram y pega aquí la clave que te manda. Se pide una sola vez en este dispositivo.'));
+    var form = el('form', 'form'); form.setAttribute('autocomplete', 'off');
     var inp = el('input'); inp.type = 'password'; inp.placeholder = 'Clave de la IA'; inp.setAttribute('aria-label', 'Clave de la IA');
     inp.autocapitalize = 'off'; inp.setAttribute('autocorrect', 'off'); inp.spellcheck = false; inp.name = 'ia-clave';
-    var b = el('button', 'ap-btn solid', 'Guardar'); b.type = 'submit';
+    var b = el('button', 'btn solid sm', 'Guardar'); b.type = 'submit';
     form.appendChild(inp); form.appendChild(b);
     form.addEventListener('submit', function(e){
       e.preventDefault();
@@ -279,16 +259,16 @@
 
     var foot = el('div', 'ia-foot');
     var izq = el('div');
-    var bAct = el('button', 'ia-link', 'Actualizar análisis'); bAct.type = 'button'; bAct.disabled = st.cargando;
+    var bAct = el('button', 'more', 'Actualizar análisis'); bAct.type = 'button'; bAct.disabled = st.cargando;
     bAct.addEventListener('click', analizar);
-    var bBor = el('button', 'ia-link mute', 'Cerrar y borrar'); bBor.type = 'button';
+    var bBor = el('button', 'more mute', 'Cerrar y borrar'); bBor.type = 'button';
     bBor.addEventListener('click', borrar);
     izq.appendChild(bAct); foot.appendChild(izq); foot.appendChild(bBor);
     c.appendChild(foot);
 
     var cap = 'Es una opinión generada por IA con información pública; no es asesoría financiera.';
     if(typeof st.restantes === 'number') cap += ' Te quedan ' + st.restantes + ' consultas hoy.';
-    c.appendChild(el('p', 'ia-cap', cap));
+    c.appendChild(el('p', 'hint ia-cap', cap));
     return c;
   }
 
@@ -303,24 +283,24 @@
     } else {
       var hayChat = st.msgs.length > 0 || st.cargando || st.abierto;
       if(!hayChat || !st.abierto){
-        raiz.appendChild(el('p', 'ia-lead', st.msgs.length
+        raiz.appendChild(el('p', 'msg', st.msgs.length
           ? 'Tienes un análisis ' + hace(st.ts) + '. Ábrelo para seguir la conversación o pide uno nuevo.'
           : 'Corre el mismo análisis de /detalle, con tesis, oportunidades y calendario, y después pregúntale lo que quieras sobre tu portafolio.'));
-        var go = el('button', 'btn solid ia-go'); go.type = 'button';
-        go.appendChild(icono(D_CHISPA, 18, true));
+        var go = el('button', 'btn solid'); go.type = 'button';
+        go.appendChild(icono(D_CHISPA, 16, false));
         go.appendChild(document.createTextNode(st.msgs.length ? 'Abrir conversación' : 'Analizar portafolio'));
         go.addEventListener('click', function(){ if(st.msgs.length){ st.abierto = true; dibujar(true); } else analizar(); });
         raiz.appendChild(go);
         if(st.msgs.length){
-          var nuevo = el('button', 'ia-link', 'Hacer un análisis nuevo'); nuevo.type = 'button'; nuevo.addEventListener('click', analizar);
+          var nuevo = el('button', 'more', 'Hacer un análisis nuevo'); nuevo.style.alignSelf = 'center'; nuevo.type = 'button'; nuevo.addEventListener('click', analizar);
           raiz.appendChild(nuevo);
         }
         if(st.error){ raiz.appendChild(el('p', 'ia-msg-err', st.error)); }
       } else {
-        fold = el('div', 'ia-fold' + (yaAbierto ? ' on' : ''));
-        var inner = el('div'); inner.appendChild(panelChat()); fold.appendChild(inner);
+        // como el resto de la app: el chat aparece con opacidad y desplazamiento, nunca animando la altura
+        fold = el('div', 'ia-fold on' + (yaAbierto ? '' : ' view-in'));
+        fold.appendChild(panelChat());
         raiz.appendChild(fold);
-        if(!yaAbierto) requestAnimationFrame(function(){ requestAnimationFrame(function(){ if(fold) fold.classList.add('on'); }); });
         if(bajar && log){
           requestAnimationFrame(function(){
             if(!log) return;
